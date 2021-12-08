@@ -48,15 +48,15 @@ namespace Horeich.SensingSolutions.IoTBridge.Controllers
         //     return Ok(); 
         // }
 
-        [HttpPut("{deviceId}/telemetry")]
-        public async Task<IActionResult> PutAsync(string deviceId, [FromQuery]DeviceTelemetry telemetry)
-        {
-            // Send data asynchronously
-            await _deviceManager.BridgeDeviceAsync(deviceId, telemetry);
+        // [HttpPut("{deviceId}/telemetry")]
+        // public async Task<IActionResult> PutAsync(string deviceId, [FromBody]DeviceTelemetry telemetry)
+        // {
+        //     // Send data asynchronously
+        //     await _deviceManager.BridgeDeviceAsync(deviceId, telemetry);
 
-            // the data has reached its destination -> return Created
-            return new CreatedResult("IoTBridge", deviceId);
-        }
+        //     // the data has reached its destination -> return Created
+        //     return new CreatedResult("IoTBridge", deviceId);
+        // }
     }
 }
 

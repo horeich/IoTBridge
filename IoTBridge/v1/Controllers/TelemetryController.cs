@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 using System.Text.Encodings.Web;
 using System.Web;
@@ -50,6 +49,21 @@ namespace Horeich.IoTBridge.v1.Controllers
             // the data has reached its destination -> return Created
             return new CreatedResult("IoTBridge", deviceId);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="deviceId"></param>
+        /// <param name="telemetry"></param>
+        /// <returns></returns>
+        [HttpPut("{deviceId}/telemetry")]
+        public async Task<IActionResult> PutAsync(string deviceId, [FromBody]TelemetryApiModel telemetry)
+        {
+            await _deviceManager.BridgeDeviceAsync(deviceId, telemetry);
+            return new CreatedResult("IoTBridge", deviceId);
+        }
+
+      
 
         // [HttpPut("{deviceId}/{data}/telemetry")]
         // public async Task<IActionResult> PutAsync(string deviceId, string data, [FromQuery]TelemetryApiModel telemetry)

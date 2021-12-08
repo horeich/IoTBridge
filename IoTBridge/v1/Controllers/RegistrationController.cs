@@ -18,11 +18,8 @@ using Horeich.Services.Models;
 
 namespace Horeich.IoTBridge.v1.Controllers
 {
-
-   
-
-    [ApiController]
-    [Route(Version.PATH)] // ExceptionsFilter
+    [ApiController] // TODO: meaning?
+    [Route(Version.PATH)] // TODO: ExceptionsFilter
     public class RegistrationController : Controller
     {
         private readonly ILogger _log;
@@ -39,29 +36,19 @@ namespace Horeich.IoTBridge.v1.Controllers
             _deviceManager = deviceManager;
             _log = logger;     
         }
-
-        ///
-        /// example call: 
-        [HttpPost("{deviceId}/resources")]
+        
         // [ProducesResponseType(StatusCodes.Status201Created)]
-        public async Task<ActionResult> CreateAsync(string deviceId, [FromQuery]LwM2MResources resources)
+        [HttpPost("{deviceId}/register")]
+        public async Task<ActionResult> CreateAsync(string deviceId)
         {
-            // if (deviceId == "FAT1") // only ncessary if taken from body
-            // {
-            //     throw new InvalidInputException(); // Throws internal server error 500 
-            // }
-
-            TwinServiceModel result = await _deviceManager.Register(deviceId, resources);
-            //return new TwinApiModel(result); // 204 no content if null // 200 OK on success
-            return new CreatedResult(nameof(CreateAsync), new TwinApiModel(result));
-            
-            //return new CreatedResult("value", new TwinApiModel(result));
+            await _deviceManager.RegisterDevice(deviceId);
+            return new CreatedResult(nameof(CreateAsync), "");
         }
 
-        [HttpDelete("{deviceId}")]
+        [HttpDelete("{deviceId}/unregister")]
         public async Task<IActionResult> DeleteAsync(string deviceId)
         {
-            await _deviceManager.Unregister(deviceId);
+            await _deviceManager.UnregisterDevice(deviceId);
 
             // the data has reached its destination -> return Created
             return new AcceptedResult(); // see OMA specification
@@ -69,6 +56,24 @@ namespace Horeich.IoTBridge.v1.Controllers
     }
 }
 
+
+        // ///
+        // /// example call: 
+        // [HttpPost("{deviceId}/resources")]
+        // // [ProducesResponseType(StatusCodes.Status201Created)]
+        // public async Task<ActionResult> CreateAsync(string deviceId, [FromQuery]LwM2MResources resources)
+        // {
+        //     // if (deviceId == "FAT1") // only ncessary if taken from body
+        //     // {
+        //     //     throw new InvalidInputException(); // Throws internal server error 500 
+        //     // }
+
+        //     TwinServiceModel result = await _deviceManager.Register(deviceId, resources);
+        //     //return new TwinApiModel(result); // 204 no content if null // 200 OK on success
+        //     return new CreatedResult(nameof(CreateAsync), new TwinApiModel(result));
+            
+        //     //return new CreatedResult("value", new TwinApiModel(result));
+        // }
 
 
 

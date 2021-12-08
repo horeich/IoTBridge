@@ -53,6 +53,8 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
 
         // List of all running virtual sensors
         private Dictionary<string, IVirtualDevice> _devices = new Dictionary<string, IVirtualDevice>();
+
+        private ConcurrentDictionary<string, IVirtualDevice> _virtualDeviceTwins = new ConcurrentDictionary<string, IVirtualDevice>();
            
         /// <summary>
         /// CTOR
@@ -291,85 +293,17 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             return twinModel; // either empty or error during loading
         }
 
-        public async Task Unregister(string deviceId)
+        public async Task UnregisterDevice(string deviceId)
         {
-            // TODO: use ConcurrentDictionary
-            // Returns false if note found but that's OK
-            _log.Debug(string.Format("Elements in list before [{0}]", _devices.Count), () => {});
-            _devices.Remove(deviceId);
-            _log.Debug(string.Format("Elements in list after [{0}]", _devices.Count), () => {});
-
+            _log.Debug(string.Format("Elements in list before [{0}]", _virtualDeviceTwins.Count), () => {});
+            if (_virtualDeviceTwins.TryRemove(deviceId, out IVirtualDevice virtualDevice))
+            {
+                _log.Debug(string.Format("Deleted client with Id [{0}]", deviceId), () => {});
+                await virtualDevice.CloseDevice();
+            }
             // TODO: check what happens if deregistration is doen a couple of time???
         }
 
-        public async Task<TwinServiceModel> Register(string deviceId, LwM2MResources resources)
-        {
-            //  Environment.SetEnvironmentVariable("AZURE_CLIENT_ID", "4cea9343-0cf4-40a4-bfce-7fcc4beadc49");
-            // Environment.SetEnvironmentVariable("AZURE_CLIENT_SECRET", "If3z_-9EJBBdjzp-vxz1qO21raG0g2_CH1");
-            // Environment.SetEnvironmentVariable("AZURE_TENANT_ID", "2bf605eb-355a-4c48-b312-63828a444b8d");
-            // TODO: Mutex here between contain and add or use concurrent dict
-            // https://docs.microsoft.com/de-de/dotnet/standard/collections/thread-safe/how-to-add-and-remove-items
-            // Add first, then load device api model
-            if (!_devices.ContainsKey(deviceId))
-            {
-                BasicDigitalTwin deviceTwin = await LoadDeviceTwin(deviceId);
-                DeviceTwinCredentials deviceTwinCredentials = new DeviceTwinCredentials();
-
-                // Check for HubId
-
-                foreach (string property in deviceTwin.Contents.Keys)
-                {
-                    if (deviceTwin.Contents.TryGetValue(property, out object value))
-                    {
-                        if (property == "HubId") // TODO: change in settings
-                        {
-                            _log.Info($"Found {property} with value {value}", () => {});
-                            deviceTwinCredentials.HubString = value.ToString(); // can only be string format
-                            break;
-                        }
-                    }
-                }
-
-                if (deviceTwinCredentials.HubString == String.Empty)
-                {
-                    throw new InvalidConfigurationException($"Unable to load hub id from device twin");
-                    // TODO: throw;
-                }
-
-                 // Get connection string from key vault
-                // model.HubString = _dataHandler.GetString(result.HubId, string.Empty) + ".azure-devices.net";
-                // if (model.HubString == String.Empty)
-                // {
-                //     throw new InvalidConfigurationException($"Unable to load configuration value for '{result.HubId}'");
-                // }
-                deviceTwinCredentials.DeviceId = deviceTwin.Id;
-                deviceTwinCredentials.DeviceKey = "I7vXwDV6vuBGIRx5ogMvpyGP/lIcY/bala7xe9eEhfc=";
-                // TODO: _dataHandler.GetString(model.DeviceId, string.Empty); // Get device key from key vault
-                if (deviceTwinCredentials.DeviceKey == String.Empty)
-                {
-                    // TODO: other error result.HubId
-                    throw new InvalidConfigurationException($"Unable to load configuration value for '{deviceTwinCredentials.DeviceId}'");
-                }
-
-                TwinServiceModel twinModel = await LoadTwinApiModel(deviceTwin.Metadata.ModelId, resources); // model id MUST be there!
-                if (twinModel != null)
-                {
-                    twinModel.DeviceId = deviceId;
-                    _devices.Add(deviceId, VirtualDeviceTwin.Create(deviceTwinCredentials, _log));
-                }
-                else
-                {
-                    throw new InvalidInputException("DTDL loading error or DTDL empty");
-                }
-                return twinModel;
-            }
-            else
-            {
-                // Throw already registered error?? See OMA spec
-            }
-
-            return null;
-        }
 
         public async Task SolveBinaryTelemetry(string deviceId, BinaryTelemetryApiModel telemetry)
         {
@@ -378,8 +312,6 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             {
                 await device.SendDeviceTelemetryAsync(telemetry.Data, 10000);
             }
-
-           
 
             // if (_devices.ContainsKey(deviceId))
             // {
@@ -396,34 +328,150 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             // }
         }
 
-        public async Task BridgeDeviceAsync(string deviceId, DeviceTelemetry telemetry)
+        public async Task RegisterDevice(string deviceId)
         {
-            await _semaphore.WaitAsync();
+            // see how to use dictionaries: 
+            // https://docs.microsoft.com/en-us/dotnet/standard/collections/thread-safe/how-to-add-and-remove-items
+
+
+            // if (!_virtualDeviceTwins.TryAdd(deviceId, null))
+            // {
+            //     DeviceTwinCredentials deviceTwinCredentials = new DeviceTwinCredentials();
+
+            //     // Init device
+            //     String default_key = "p4I1G01LRFPjwItSVi9rY3X8mDe2H2V8A5X8CZh43No=";
+            //     String default_hub = "iotc-2fee92c0-e1fe-4a11-b9ac-0e826cac1889";
+
+            //     deviceTwinCredentials.DeviceId = deviceId;
+            //     deviceTwinCredentials.HubString = _dataHandler.GetString(deviceId + "_Hub", default_hub) + ".azure-devices.net";
+            //     deviceTwinCredentials.DeviceKey = _dataHandler.GetString(deviceId + "_key", default_key);
+
+            //     _virtualDeviceTwins[deviceId] = VirtualDeviceTwin.Create(deviceTwinCredentials, _log);
+            // }
+
+            // _virtualDeviceTwins.AddOrUpdate(
+            //     deviceId,
+            //     null,
+            //     (existingKey, existingValue) =>
+            //     {
+            //         // do stuff with existing key and value
+            //     });
+
+            VirtualDeviceTwin virtualDeviceTwin = new VirtualDeviceTwin(_log);
+
+            if (_virtualDeviceTwins.TryAdd(deviceId, virtualDeviceTwin))
+            {
+                DeviceTwinCredentials deviceTwinCredentials = new DeviceTwinCredentials();
+                
+                String default_key = "p4I1G01LRFPjwItSVi9rY3X8mDe2H2V8A5X8CZh43No=";
+                String default_hub = "iotc-2fee92c0-e1fe-4a11-b9ac-0e826cac1889";
+
+                deviceTwinCredentials.DeviceId = deviceId;
+                deviceTwinCredentials.HubString = _dataHandler.GetString(deviceId + "_Hub", default_hub) + ".azure-devices.net";
+                deviceTwinCredentials.DeviceKey = _dataHandler.GetString(deviceId + "_key", default_key);
+                // deviceTwinCredentials.HubString = "HHub.azure-devices.net"; // TODO: load from key vault
+                // deviceTwinCredentials.DeviceId = deviceId;
+                // deviceTwinCredentials.DeviceKey = "I7vXwDV6vuBGIRx5ogMvpyGP/lIcY/bala7xe9eEhfc=";
+
+                // Only adds the virtual twin if it does not exist yet
+                // TODO: Handle errors that are thrown here
+                //VirtualDeviceTwin virtualDeviceTwin = VirtualDeviceTwin.Create(deviceTwinCredentials, _log);
+                // _virtualDeviceTwins.TryAdd(deviceId, virtualDeviceTwin);
+
+
+                _log.Debug(string.Format("# Elements in list [{0}]", _virtualDeviceTwins.Count), () => {});
+                
+                await virtualDeviceTwin.ConnectDevice(deviceTwinCredentials);
+
+                //await virtualDeviceTwin.RetrieveDeviceTwin();
+
+                _log.Debug(string.Format("Device {0} registered", deviceId), () => {});
+            }
+            else
+            {
+                _log.Warn(string.Format("Device {0} already registered", deviceId), () => {});
+
+            }
+
+            // try 
+            // {
+               
+            // }
+            // catch (Exception e)
+            // {
+            //     _log.Error(string.Format("Device id is null {}", e.Message), () => {});
+            // }
+        }
+
+        public PropertyServiceModel GetDownlinkProperties(String deviceId)
+        {
+            PropertyServiceModel propertyApiModel = null;
             try
             {
-                if (!_devices.ContainsKey(deviceId))
+                if (_virtualDeviceTwins.TryGetValue(deviceId, out IVirtualDevice virtualDeviceTwin))
                 {
-                    _log.Debug("Adding device to device list", () => {});
-                    DeviceApiModel model = await LoadDeviceApiModel(deviceId);
-                    _devices.Add(model.DeviceId, await VirtualDeviceTwin.Create(model, _log)); // TODO own data handler?
-                    UpdateDeviceList(_config.DeviceUpdateInterval);
+                    propertyApiModel = virtualDeviceTwin.GetDownlinkProperties();
                 }
-
-                // Get reference to existing virtual sensor
-                IVirtualDevice device = _devices[deviceId];
-
-                // Send telemetry async
-                await device.SendDeviceTelemetryAsync(telemetry.Data, _config.IoTHubTimeout);
-                _log.Debug("Telemetry successfully sent to IoT Central", () => {});
+                else
+                {
+                    _log.Warn("Device was not found", () => {});
+                }
             }
-            finally
+            catch (Exception e)
             {
-                _semaphore.Release();
+                // TODO: invalid argument exception??
+                _log.Error(string.Format("Device id is null {}", e.Message), () => {});
+            }
+            return propertyApiModel;
+        }
+
+        public async Task BridgeDeviceAsync(String deviceId, TelemetryApiModel payload)
+        {
+            try 
+            {
+                if (_virtualDeviceTwins.TryGetValue(deviceId, out IVirtualDevice virtualDeviceTwin))
+                {
+                    await virtualDeviceTwin.SyncDeviceFunctionsAsync(payload);
+                }
+            }
+            catch (Exception e)
+            {
+                // TODO: invalid argument exception??
+                _log.Error(string.Format("Device id is null {}", e.Message), () => {});
             }
         }
+
+       
     }
 }
 
+
+        // public async Task<TwinServiceModel> Register(string deviceId, LwM2MResources resources)
+        // {
+        //     // Environment.SetEnvironmentVariable("AZURE_CLIENT_ID", "4cea9343-0cf4-40a4-bfce-7fcc4beadc49");
+        //     // Environment.SetEnvironmentVariable("AZURE_CLIENT_SECRET", "If3z_-9EJBBdjzp-vxz1qO21raG0g2_CH1");
+        //     // Environment.SetEnvironmentVariable("AZURE_TENANT_ID", "2bf605eb-355a-4c48-b312-63828a444b8d");
+        //     // TODO: Mutex here between contain and add or use concurrent dict
+        //     // https://docs.microsoft.com/de-de/dotnet/standard/collections/thread-safe/how-to-add-and-remove-items
+        //     // Add first, then load device api model
+            
+            
+        //     if (!_virtualDeviceTwins.TryGetValue(deviceId, out IVirtualDevice value))
+        //     {
+        //         DeviceTwinCredentials deviceTwinCredentials = new DeviceTwinCredentials();
+
+        //         deviceTwinCredentials.HubString = _dataHandler.GetString(deviceId + "_Hub", "iotc-2fee92c0-e1fe-4a11-b9ac-0e826cac1889") + ".azure-devices.net";
+        //         deviceTwinCredentials.DeviceKey = _dataHandler.GetString(deviceId + "_key", "p4I1G01LRFPjwItSVi9rY3X8mDe2H2V8A5X8CZh43No=");
+
+        //         // deviceTwinCredentials.HubString = "HHub.azure-devices.net"; // TODO: load from key vault
+        //         // deviceTwinCredentials.DeviceKey = "I7vXwDV6vuBGIRx5ogMvpyGP/lIcY/bala7xe9eEhfc=";
+
+        //         // Only adds the virtual twin if it does not exist yet
+        //         _virtualDeviceTwins.TryAdd(deviceId, VirtualDeviceTwin.Create(deviceTwinCredentials, _log));
+        //     }
+
+        //     return null;
+        // }
 
 // }
             // catch (DeviceIdentityException e)
@@ -459,3 +507,89 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             // double currentHumidity = baseHumidity + rand.NextDouble() * 20;
             // try
             // {  
+
+
+ // public async Task BridgeDeviceAsync(string deviceId, DeviceTelemetry telemetry)
+        // {
+        //     await _semaphore.WaitAsync();
+        //     try
+        //     {
+        //         if (!_devices.ContainsKey(deviceId))
+        //         {
+        //             _log.Debug("Adding device to device list", () => {});
+        //             DeviceApiModel model = await LoadDeviceApiModel(deviceId);
+        //             _devices.Add(model.DeviceId, await VirtualDeviceTwin.Create(model, _log)); // TODO own data handler?
+        //             UpdateDeviceList(_config.DeviceUpdateInterval);
+        //         }
+
+        //         // Get reference to existing virtual sensor
+        //         IVirtualDevice device = _devices[deviceId];
+
+        //         // Send telemetry async
+        //         await device.SendDeviceTelemetryAsync(telemetry.Data, _config.IoTHubTimeout);
+        //         _log.Debug("Telemetry successfully sent to IoT Central", () => {});
+        //     }
+        //     finally
+        //     {
+        //         _semaphore.Release();
+        //     }
+        // }
+
+
+                    // if (!_devices.ContainsKey(deviceId))
+            // {
+            //     BasicDigitalTwin deviceTwin = await LoadDeviceTwin(deviceId);
+            //     DeviceTwinCredentials deviceTwinCredentials = new DeviceTwinCredentials();
+
+            //     // Check for HubId
+
+            //     foreach (string property in deviceTwin.Contents.Keys)
+            //     {
+            //         if (deviceTwin.Contents.TryGetValue(property, out object value))
+            //         {
+            //             if (property == "HubId") // TODO: change in settings
+            //             {
+            //                 _log.Info($"Found {property} with value {value}", () => {});
+            //                 deviceTwinCredentials.HubString = value.ToString(); // can only be string format
+            //                 break;
+            //             }
+            //         }
+            //     }
+
+            //     if (deviceTwinCredentials.HubString == String.Empty)
+            //     {
+            //         throw new InvalidConfigurationException($"Unable to load hub id from device twin");
+            //         // TODO: throw;
+            //     }
+
+            //      // Get connection string from key vault
+            //     // model.HubString = _dataHandler.GetString(result.HubId, string.Empty) + ".azure-devices.net";
+            //     // if (model.HubString == String.Empty)
+            //     // {
+            //     //     throw new InvalidConfigurationException($"Unable to load configuration value for '{result.HubId}'");
+            //     // }
+            //     deviceTwinCredentials.DeviceId = deviceTwin.Id;
+            //     deviceTwinCredentials.DeviceKey = "I7vXwDV6vuBGIRx5ogMvpyGP/lIcY/bala7xe9eEhfc=";
+            //     // TODO: _dataHandler.GetString(model.DeviceId, string.Empty); // Get device key from key vault
+            //     if (deviceTwinCredentials.DeviceKey == String.Empty)
+            //     {
+            //         // TODO: other error result.HubId
+            //         throw new InvalidConfigurationException($"Unable to load configuration value for '{deviceTwinCredentials.DeviceId}'");
+            //     }
+
+            //     TwinServiceModel twinModel = await LoadTwinApiModel(deviceTwin.Metadata.ModelId, resources); // model id MUST be there!
+            //     if (twinModel != null)
+            //     {
+            //         twinModel.DeviceId = deviceId;
+            //         _devices.Add(deviceId, VirtualDeviceTwin.Create(deviceTwinCredentials, _log));
+            //     }
+            //     else
+            //     {
+            //         throw new InvalidInputException("DTDL loading error or DTDL empty");
+            //     }
+            //     return twinModel;
+            // }
+            // else
+            // {
+            //     // Throw already registered error?? See OMA spec
+            // }

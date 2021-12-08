@@ -28,7 +28,6 @@ using Azure.Identity;
 using Azure;
 using Microsoft.Azure.DigitalTwins.Parser;
 
-
 using System.Web;
 
 using Horeich.SensingSolutions.Services.StorageAdapter;
@@ -37,12 +36,16 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
 {   
     public interface IVirtualDeviceManager
     {
-        Task BridgeDeviceAsync(string deviceId, DeviceTelemetry model);
+        Task BridgeDeviceAsync(string deviceId, TelemetryApiModel model);
 
-        Task<TwinServiceModel> Register(string deviceId, LwM2MResources resources);
+        Task RegisterDevice(string deviceId);
 
-        Task Unregister(string deviceId);
+        // Task<TwinServiceModel> Register(string deviceId, LwM2MResources resources);
+
+        Task UnregisterDevice(string deviceId);
 
         Task SolveBinaryTelemetry(string deviceId, BinaryTelemetryApiModel telemetry);
+
+        PropertyServiceModel GetDownlinkProperties(String deviceId);
     }
 }

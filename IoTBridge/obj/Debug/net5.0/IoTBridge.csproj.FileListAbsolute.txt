@@ -74,3 +74,4 @@ C:\WorkDir\IoTBackendThings\IoTBridge\IoTBridge\bin\Debug\net5.0\Microsoft.Build
 C:\WorkDir\IoTBackendThings\IoTBridge\IoTBridge\bin\Debug\net5.0\Microsoft.Build.Utilities.Core.dll
 C:\WorkDir\IoTBackendThings\IoTBridge\IoTBridge\bin\Debug\net5.0\Microsoft.Identity.Client.dll
 C:\WorkDir\IoTBackendThings\IoTBridge\IoTBridge\bin\Debug\net5.0\Microsoft.Identity.Client.Extensions.Msal.dll
+C:\WorkDir\IoTBackendThings\IoTBridge\IoTBridge\bin\Debug\net5.0\v1\Controllers\test.json
