@@ -1,0 +1,5 @@
+C:\WorkDir\IoTBackend\IoTBridge\Services\src\obj\Debug\net5.0\Services.csproj.AssemblyReference.cache
+C:\WorkDir\IoTBackend\IoTBridge\Services\src\obj\Debug\net5.0\Services.GeneratedMSBuildEditorConfig.editorconfig
+C:\WorkDir\IoTBackend\IoTBridge\Services\src\obj\Debug\net5.0\Services.AssemblyInfoInputs.cache
+C:\WorkDir\IoTBackend\IoTBridge\Services\src\obj\Debug\net5.0\Services.AssemblyInfo.cs
+C:\WorkDir\IoTBackend\IoTBridge\Services\src\obj\Debug\net5.0\Services.csproj.CoreCompileInputs.cache
