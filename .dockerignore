@@ -1,2 +1,5 @@
-bin\
-obj\
+.vscode
+IoTbridge/bin/*
+IoTbridge/obj/*
+Services/bin/*
+Services/obj/*

@@ -58,7 +58,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             IAuthenticationMethod authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(model.DeviceId, model.DeviceKey);
             _client = DeviceClient.Create(model.HubString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Amqp);
         }
-        
+
         ~VirtualDevice()
         {
             Dispose(false);
@@ -83,7 +83,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             }
         }
 
-        public async Task<bool> IsActive()
+         public async Task<bool> IsActive()
         {
             TimeSpan test = _uptime.Duration;
             if (TimeSpan.Compare(test, _sendInterval) > 0)
@@ -102,7 +102,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             {
                 reportedProperties[property.Key] = property.Value;
             }
-            
+
             CancellationTokenSource cts = new CancellationTokenSource();
             cts.CancelAfter(timeout);
             await _client.UpdateReportedPropertiesAsync(reportedProperties, cts.Token);
@@ -112,7 +112,6 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
         {
             // Assign value to variable names
             Dictionary<string, object> serializeableData = new Dictionary<string, object>();
-
             for (int i = 0; i < telemetryDataPoints.Count; ++i)
             {
                 Type type = _mapping[i].Item2;
@@ -137,7 +136,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             {
                 // Send event but cancel after given timeout (OperationCanceledException)
                 Task sendTask = _client.SendEventAsync(message, cts.Token);
-                
+
                 //_log.Info(string.Format("{0} > Sending telemetry: {1}", DateTime.Now, messageString), () => {});
                 await sendTask;
             }

@@ -32,22 +32,6 @@ namespace Horeich.SensingSolutions.IoTBridge.Controllers
             _log = logger;     
         }
 
-        /// <summary>
-        /// Generic IoT Device message attribute routing
-        /// DEPRECATED
-        /// </summary>
-        /// <param name="info"></param>
-        /// <returns></returns>
-        // [HttpPut("[action]")]
-        // public async Task<IActionResult> IoTDevice([FromQuery]DeviceTelemetry telemetry)
-        // {
-        //     // Send data asynchronously
-        //     await _deviceManager.BridgeDeviceAsync(telemetry);
-
-        //     // the data has reached its destination -> return Ok
-        //     return Ok(); 
-        // }
-
         [HttpPut("{deviceId}/telemetry")]
         public async Task<IActionResult> PutAsync(string deviceId, [FromBody]DeviceTelemetry telemetry)
         {
