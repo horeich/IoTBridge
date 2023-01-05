@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Newtonsoft.Json;
 
-namespace Horeich.SensingSolutions.Services.StorageAdapter
+namespace Horeich.Services.StorageAdapter
 {
     public class ValueApiModel
     {

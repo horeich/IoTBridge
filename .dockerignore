@@ -1,5 +1,5 @@
-.vscode
-IoTbridge/src/bin/*
-IoTbridge/src/obj/*
-Services/src/bin/*
-Services/src/obj/*
+.vscode/*
+**/bin/
+**/obj/
+**/tests/
+**/assets/

@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Horeich.SensingSolutions.Services.Exceptions
+namespace Horeich.Services.Exceptions
 {
     /// <summary>
     /// This exception is thrown when a client sends a request badly formatted

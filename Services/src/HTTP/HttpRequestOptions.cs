@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-namespace Horeich.SensingSolutions.Services.Http
+namespace Horeich.Services.Http
 {
     public class HttpRequestOptions
     {

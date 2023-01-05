@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Services.Test")]
-namespace Horeich.SensingSolutions.Services.Http
+namespace Horeich.Services.Http
 {
     public interface IHttpResponse
     {

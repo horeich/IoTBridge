@@ -1,4 +1,4 @@
-using Horeich.SensingSolutions.Services.Diagnostics;
+using Horeich.Services.Diagnostics;
 using Microsoft.Azure.KeyVault;
 
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -6,24 +6,19 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Horeich.SensingSolutions.Services.Runtime
+namespace Horeich.Services.Runtime
 {
     public class KeyVault
     {
-
         // Key Vault details and access
         private readonly string _name;
         private readonly string _clientId;
         private readonly string _clientSecret;
-        private ILocalLogger _log;
-
-        // Key Vault Client
+        private ILogger _log;
         private readonly KeyVaultClient _keyVaultClient;
-
-        // Constants
         private const string KEY_VAULT_URI = "https://{0}.vault.azure.net/secrets/{1}";
 
-        public KeyVault(string name, string clientId,  string clientSecret, ILocalLogger logger)
+        public KeyVault(string name, string clientId,  string clientSecret, ILogger logger)
         {
             _name = name;
             _clientId = clientId;
@@ -48,7 +43,7 @@ namespace Horeich.SensingSolutions.Services.Runtime
             }
             catch (Exception)
             {
-               _log.Error($"Secret {secretKey} not found in Key Vault.", () => { });
+               _log.Error($"Secret {secretKey} not found in Key Vault.");
                 return null;
             }
         }
@@ -62,7 +57,7 @@ namespace Horeich.SensingSolutions.Services.Runtime
 
             if (result == null)
             {
-                _log.Debug($"Failed to obtain authentication token from key vault.", () => { });
+                _log.Debug($"Failed to obtain authentication token from key vault.");
                 Console.WriteLine("Failed to init key vault");
                 throw new System.InvalidOperationException("Failed to obtain the JWT token");
             }

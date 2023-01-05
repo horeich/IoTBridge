@@ -8,24 +8,25 @@ using System.Threading;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 
-using Horeich.SensingSolutions.Services.Runtime;
-using Horeich.SensingSolutions.Services.Exceptions;
-using Horeich.SensingSolutions.Services.Http;
-using Horeich.SensingSolutions.Services.Diagnostics;
+using Horeich.Services.Runtime;
+using Horeich.Services.Exceptions;
+using Horeich.Services.Http;
+using Horeich.Services.Diagnostics;
 
-namespace Horeich.SensingSolutions.Services.VirtualDevice
+namespace Horeich.Services.VirtualDevice
 {
     public interface IVirtualDevice
     {
+        public string DeviceId { get; }
         Task SendDeviceTelemetryAsync(List<string> telemetryDataPoints, int timeout);
-        Task<bool> IsActive();
+        Task<bool> UpdateConnectionStatusAsync();
     }
     public class VirtualDevice : IVirtualDevice, IDisposable
     {
         private ILogger _logger;
         private DeviceClient _client;
         private List<Tuple<string, Type>> _mapping = new List<Tuple<string, Type>>();
-        private readonly string _deviceId;
+        public string DeviceId { get; set; }
         private readonly string _deviceKey;
         private readonly string _hubString;
         private Dictionary<string, string> _properties;
@@ -45,7 +46,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
         {
             _logger = logger;
             _mapping = model.Mapping;
-            _deviceId = model.DeviceId;
+            DeviceId = model.DeviceId;
             _deviceKey = model.DeviceKey;
             _hubString = model.HubString;
             _sendInterval = TimeSpan.FromSeconds(model.SendInterval);
@@ -72,7 +73,7 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
 
         private void Dispose(bool disposing)
         {
-            _logger.Debug("Client has been disposed", () => {});
+            _logger.Debug("Client has been disposed");
             if (!_disposed)
             {
                 if (disposing)
@@ -83,10 +84,10 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             }
         }
 
-         public async Task<bool> IsActive()
+        public async Task<bool> UpdateConnectionStatusAsync()
         {
-            TimeSpan test = _uptime.Duration;
-            if (TimeSpan.Compare(test, _sendInterval) > 0)
+            TimeSpan onlineInterval = _uptime.OnlineInterval;
+            if (TimeSpan.Compare(onlineInterval, _sendInterval) > 0)
             {
                 _properties["Status"] = "offline";
                 await UpdateDevicePropertiesAsync(_properties, propertyUpdateTime);

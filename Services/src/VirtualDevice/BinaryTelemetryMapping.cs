@@ -16,9 +16,4 @@ namespace Horeich.Services.VirtualDevice
         public string Type { get; set; }
         public Dictionary<string, string> Properties { get; set; }
     }
-
-    public class DeviceTelemetry
-    {
-        public List<string> Data { get; set; }
-    }
 }

@@ -5,18 +5,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Horeich.SensingSolutions.Services.Diagnostics;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.Exceptions;
 
 // using Microsoft.Azure.IoTSolutions.IotHubManager.Services.Exceptions;
 using Microsoft.Extensions.Configuration;
 
-namespace Horeich.SensingSolutions.Services.Runtime
+namespace Horeich.Services.Runtime
 {
     public interface IDataHandler
     {
         string GetString(string key, string defaultValue = "");
         bool GetBool(string key, bool defaultValue = false);
         int GetInt(string key, int defaultValue = 0);
+        float GetSingle(string key, float defaultValue = 0.0f);
     }
 
     /// <summary>
@@ -26,18 +28,19 @@ namespace Horeich.SensingSolutions.Services.Runtime
     public class DataHandler : IDataHandler
     {
         private readonly IConfigurationRoot _configuration;
-        private readonly ILocalLogger _log;
+        private readonly ILogger _log;
         private KeyVault _keyVault;
 
         // Constants
         /// <summary>
         /// Constants are formatted to be read from JSON file
         /// </summary>
-        private const string CLIENT_ID = "KeyVault:aadAppId";
-        private const string CLIENT_SECRET = "KeyVault:aadAppSecret";
-        private const string KEY_VAULT_NAME = "KeyVault:name";
+        private const string CLIENT_ID = "KeyVault:AADClientId";
+        private const string CLIENT_SECRET = "KeyVault:AADClientSecret";
+        private const string KEY_VAULT_NAME = "KeyVault:Name";
+        private const string DEVICE_ID = "Device:Id";
 
-        public DataHandler(ILocalLogger logger)
+        public DataHandler(ILogger logger)
         {
             _log = logger;
 
@@ -84,7 +87,19 @@ namespace Horeich.SensingSolutions.Services.Runtime
             }
             catch (Exception e)
             {
-                throw e;// new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+            }
+        }
+
+        public float GetSingle(string key, float defaultValue = 0.0f)
+        {
+            try
+            {
+                return Convert.ToSingle(this.GetSecrets(key, defaultValue.ToString()));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
             }
         }
 
@@ -111,8 +126,8 @@ namespace Horeich.SensingSolutions.Services.Runtime
             // Try to fetch value from Key Vault
             if (string.IsNullOrEmpty(value))
             {
-                _log.Info($"Value for secret {key} not found in local env. " +
-                    $" Trying to get the secret from KeyVault.", () => { });
+                _log.Info($"Value for secret {key} not found in local env." +
+                    $" Trying to get the secret from KeyVault.");
                 value = _keyVault.GetSecret(key);
             }
 
@@ -142,6 +157,7 @@ namespace Horeich.SensingSolutions.Services.Runtime
             var value = _configuration.GetValue(key, defaultValue);
 
             // Resolve enironment variable
+            // The default value is the value from the configuration
             ReplaceEnvironmentVariables(ref value, defaultValue);
             return value;
         }
@@ -183,8 +199,8 @@ namespace Horeich.SensingSolutions.Services.Runtime
                     select m.Groups[1].Value).ToArray();
             if (keys.Length > 0)
             {
-                var varsNotFound = keys.Aggregate(", ", (current, k) => current + k);
-                this._log.Error("Environment variables not found", () => new { varsNotFound });
+                // var varsNotFound = keys.Aggregate(", ", (current, k) => current + k);
+                // this._log.Error("Environment variables not found", () => new { varsNotFound });
                 //throw new InvalidConfigurationException("Environment variables not found: " + varsNotFound);
             }
         }
@@ -218,7 +234,8 @@ namespace Horeich.SensingSolutions.Services.Runtime
                 value = keys.Aggregate(value, (current, k) => current.Replace("${?" + k + "}", string.Empty));
 
                 var varsNotFound = keys.Aggregate(", ", (current, k) => current + k);
-                this._log.Info("Environment variables not found", () => new { varsNotFound });
+                this._log.Info("Environment variables not found");
+                //this._log.Info("Environment variables not found", () => new { varsNotFound });
 
                 notFound = true;
             }

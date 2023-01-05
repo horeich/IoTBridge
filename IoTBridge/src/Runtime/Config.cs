@@ -1,10 +1,10 @@
 // Copyright (c) Horeich UG. All rights reserved.
 
 using System;
-using Horeich.SensingSolutions.Services.Runtime;
-using Horeich.SensingSolutions.Services.Diagnostics;
+using Horeich.Services.Runtime;
+using Horeich.Services.Diagnostics;
 
-namespace Horeich.SensingSolutions.IoTBridge.Runtime
+namespace Horeich.IoTBridge.Runtime
 {
     public interface IConfig
     {
@@ -23,6 +23,7 @@ namespace Horeich.SensingSolutions.IoTBridge.Runtime
     public class Config : IConfig
     {
         private const string APPLICATION_KEY = "IoTBridge:";
+        private const string APPLICATION_NAME = APPLICATION_KEY + "Name";
 
         // service port
         private const string PORT_KEY = APPLICATION_KEY + "webservicePort";
@@ -106,6 +107,7 @@ namespace Horeich.SensingSolutions.IoTBridge.Runtime
 
             this.ServicesConfig = new ServicesConfig
             {
+                ApplicationName = dataHandler.GetString(APPLICATION_NAME),
                 StorageAdapterDocumentKey = dataHandler.GetString(STORAGE_DOCUMENT_KEY),
                 StorageAdapterDeviceCollectionKey = dataHandler.GetString(STORAGE_DEVICE_COLLECTION_KEY),
                 StorageAdapterMappingCollection = dataHandler.GetString(STORAGE_MAPPING_COLLECTION_KEY),
@@ -121,38 +123,16 @@ namespace Horeich.SensingSolutions.IoTBridge.Runtime
                 //UserManagementApiUrl = configData.GetString(USER_MANAGEMENT_URL_KEY)
             };
 
-            // Parse enum
-            LogLevel defaultLogLevel;
+            // Initialize log config
+            // Parse log config enum
+            LogLevel logLevel;
             string enumString = dataHandler.GetString(LOGGING_LEVEL_DEFAULT);
-            defaultLogLevel = Enum.TryParse<LogLevel>(enumString, true, out defaultLogLevel) ? defaultLogLevel : LogLevel.Debug;
-
-            LogLevel remoteLogLevel;
-            enumString = dataHandler.GetString(LOGGING_LEVEL_REMOTE);
-            remoteLogLevel = Enum.TryParse<LogLevel>(enumString, true, out remoteLogLevel) ? remoteLogLevel : LogLevel.Debug;
+            logLevel = Enum.TryParse<LogLevel>(enumString, true, out logLevel) ? logLevel : LogLevel.Debug;
 
             LogConfig = new LogConfig
             {
-                DefaultLogLevel = defaultLogLevel,
-                RemoteLogLevel = remoteLogLevel,
-                //NLog.LogLevel remoteLogLevel = dataHandler.GetEnum<NLog.LogLevel>(LOGGING_LEVEL_REMOTE, NLog.LogLevel.Debug),
-                InstrumentationKey = dataHandler.GetString(LOGGING_INSTRUMENTATION_KEY),
+                LogLevel = logLevel,
             };
-
-            // this.ClientAuthConfig = new ClientAuthConfig
-            // {
-            //     // By default CORS is disabled
-            //     CorsWhitelist = configData.GetString(CORS_WHITELIST_KEY, string.Empty),
-            //     // By default Auth is required
-            //     AuthRequired = configData.GetBool(AUTH_REQUIRED_KEY, true),
-            //     // By default auth type is JWT
-            //     AuthType = configData.GetString(AUTH_TYPE_KEY, "JWT"),
-            //     // By default the only trusted algorithms are RS256, RS384, RS512
-            //     JwtAllowedAlgos = configData.GetString(JWT_ALGOS_KEY, "RS256,RS384,RS512").Split(','),
-            //     JwtIssuer = configData.GetString(JWT_ISSUER_KEY),
-            //     JwtAudience = configData.GetString(JWT_AUDIENCE_KEY),
-            //     // By default the allowed clock skew is 2 minutes
-            //     JwtClockSkew = TimeSpan.FromSeconds(configData.GetInt(JWT_CLOCK_SKEW_KEY, 120)),
-            // };
         }
     }
 }

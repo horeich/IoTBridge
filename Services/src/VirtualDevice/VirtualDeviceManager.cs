@@ -1,32 +1,16 @@
-﻿/// <summary>
-/// Copyright (c) Horeich UG
-/// /// \author: Andreas Reichle
-/// </summary>
+﻿// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
 
 using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-
-using Microsoft.Azure.Devices.Client;
-using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.Devices.Provisioning.Client;
-using Microsoft.Azure.Devices.Provisioning.Client.Transport;
-using Newtonsoft.Json;
-
-using Horeich.SensingSolutions.Services.Runtime;
-using Horeich.SensingSolutions.Services.Exceptions;
-using Horeich.SensingSolutions.Services.Diagnostics;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Collections.Specialized;
 
-using System.Web;
+using Horeich.Services.Runtime;
+using Horeich.Services.Exceptions;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.StorageAdapter;
 
-using Horeich.SensingSolutions.Services.StorageAdapter;
-
-namespace Horeich.SensingSolutions.Services.VirtualDevice
+namespace Horeich.Services.VirtualDevice
 {
     public interface IVirtualDeviceManager
     {
@@ -38,19 +22,12 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
         private readonly IStorageAdapterClient _storageClient;
         private readonly IServicesConfig _config;
         private readonly IDataHandler _dataHandler;
-        private readonly ILogger _log;
-        static TwinCollection reportedProperties = new TwinCollection();
-        public TimeSpan SendTimeout { set; get; }
+        private readonly ILogger _logger;
+        private Task _updateTask;
+        // private CancellationTokenSource _cts;
+        private Dictionary<string, IVirtualDevice> _devices = new Dictionary<string, IVirtualDevice>(); // list of all running virtual sensors
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        // List of all running virtual sensors
-        private Dictionary<string, IVirtualDevice> _devices = new Dictionary<string, IVirtualDevice>();
-
-        /// <summary>
-        /// CTOR
-        /// </summary>
-        /// <param name="dataHandler"></param>
-        /// <param name="logger"></param>
         public VirtualDeviceManager(
             IStorageAdapterClient storageClient,
             IDataHandler dataHandler,
@@ -60,14 +37,11 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             _storageClient = storageClient;
             _config = config;
             _dataHandler = dataHandler;
-            _log = logger;
+            _logger = logger;
+            _updateTask = Task.Run(() => UpdateDevices());
+            // _cts = new CancellationTokenSource();
         }
 
-         /// <summary>
-        /// Get type of data points from given string
-        /// </summary>
-        /// <param name="dataType"></param>
-        /// <returns></returns>
         private Type TypeFromString(string dataType)
         {
             if (String.Compare(dataType, "int") == 0)
@@ -102,43 +76,63 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
         /// </summary>
         /// <param name="updateInterval"></param>
         /// <returns></returns>
-        private async void UpdateDeviceList(int updateInterval)
+        // private async void UpdateDeviceList(int updateInterval)
+        // {
+        //     await Task.Run(async () =>
+        //     {
+        //         int count = 1;
+        //         while (count > 0)
+        //         {
+        //             await Task.Delay(updateInterval).ConfigureAwait(false);
+        //             await _semaphore.WaitAsync();
+        //             try
+        //             {
+        //                 foreach (KeyValuePair<string, IVirtualDevice> device in _devices)
+        //                 {
+        //                     bool active = await device.Value.IsActive();
+        //                     if (!active)
+        //                     {
+        //                         _logger.Info($"Removing device '{device.Value.DeviceId}' from device list");
+        //                         _devices.Remove(device.Key);
+        //                     }
+        //                 }
+        //                 count = _devices.Count;
+        //             }
+        //             finally
+        //             {
+        //                 _semaphore.Release();
+        //             }
+        //         }
+        //     });
+        // }
+
+        private async Task UpdateDevices()
         {
-            await Task.Run(async () =>
+            while (true)
             {
-                int count = 1;
-                while(count > 0)
+                await Task.Delay(TimeSpan.FromSeconds(_config.DeviceUpdateInterval)).ConfigureAwait(false);
+                await _semaphore.WaitAsync();
+                try
                 {
-                    await Task.Delay(updateInterval).ConfigureAwait(false);
-                    await _semaphore.WaitAsync();
-                    try
+                    foreach (KeyValuePair<string, IVirtualDevice> device in _devices)
                     {
-                        foreach (KeyValuePair<string, IVirtualDevice> device in _devices)
+                        bool active = await device.Value.UpdateConnectionStatusAsync();
+                        if (!active)
                         {
-                            bool active = await device.Value.IsActive();
-                            if (!active)
-                            {
-                                _log.Debug("Removing device from device list", () => {});
-                                _devices.Remove(device.Key);
-                            }
+                            _logger.Info($"Removing device '{device.Value.DeviceId}' from device list");
+                            _devices.Remove(device.Key);
                         }
-                        count = _devices.Count;
-                    }
-                    finally
-                    {
-                        _semaphore.Release();
                     }
                 }
-            });
+                finally
+                {
+                    _semaphore.Release();
+                }
+                _logger.Debug("Updated devices");
+            }
         }
 
-         /// <summary>
-        /// The API model of the sensor is stored in a SQL storage and is accessed when the sensor is being created or
-        /// has been inactive for a while
-        /// </summary>
-        /// <param name="deviceId"></param>
-        /// <returns></returns>
-        private async Task<DeviceApiModel> LoadDeviceApiModel(string deviceId)
+        private async Task<DeviceApiModel> LoadDeviceApiModelAsync(string deviceId)
         {
             DeviceApiModel model = new DeviceApiModel();
             model.DeviceId = deviceId;
@@ -148,14 +142,14 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             model.SendInterval = result.SendInterval;
             model.Properties = result.Properties;
 
-            // Get connection string from key vault
+            // Get Iot Hub connection string from key vault
             model.HubString = _dataHandler.GetString(result.HubId, string.Empty) + ".azure-devices.net";
             if (model.HubString == String.Empty)
             {
                 throw new InvalidConfigurationException($"Unable to load configuration value for '{result.HubId}'");
             }
 
-            // Get device key from key vault
+            // Get Device Key from key vault
             model.DeviceKey = _dataHandler.GetString(model.DeviceId, string.Empty);
             if (model.DeviceKey == String.Empty)
             {
@@ -182,18 +176,17 @@ namespace Horeich.SensingSolutions.Services.VirtualDevice
             {
                 if (!_devices.ContainsKey(deviceId))
                 {
-                    _log.Debug("Adding device to device list", () => {});
-                    DeviceApiModel model = await LoadDeviceApiModel(deviceId);
-                    _devices.Add(model.DeviceId, await VirtualDevice.Create(model, _log)); // TODO own data handler?
-                    UpdateDeviceList(_config.DeviceUpdateInterval);
+                    _logger.Info($"Adding device '{deviceId}' to internal device list");
+                    DeviceApiModel model = await LoadDeviceApiModelAsync(deviceId);
+                    _devices.Add(model.DeviceId, await VirtualDevice.Create(model, _logger)); // TODO own data handler?
                 }
 
                 // Get reference to existing virtual sensor
                 IVirtualDevice device = _devices[deviceId];
-
+                
                 // Send telemetry async
                 await device.SendDeviceTelemetryAsync(telemetry.Data, _config.IoTHubTimeout);
-                _log.Debug("Telemetry successfully sent to IoT Central", () => {});
+                _logger.Debug("Telemetry successfully sent to IoT Central");
             }
             finally
             {

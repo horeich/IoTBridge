@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Horeich.SensingSolutions.Services.Http
+namespace Horeich.Services.Http
 {
     public interface IHttpRequest
     {

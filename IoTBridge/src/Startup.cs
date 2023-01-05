@@ -1,37 +1,25 @@
 // Copyright (c) Horeich UG (andreas.reichle@horeich.de)
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-//using Microsoft.Extensions.Logging;
-
-using Microsoft.Extensions.FileProviders;
 
 using Autofac;
-using Autofac.Extensions.DependencyInjection; // Inject services in Autofac
+using Autofac.Extensions.DependencyInjection;
 
-using Horeich.SensingSolutions.Services.Diagnostics;
-using Horeich.SensingSolutions.Services.Runtime;
-using Horeich.SensingSolutions.Services.VirtualDevice;
-using Horeich.SensingSolutions.IoTBridge.Runtime;
-using Horeich.SensingSolutions.IoTBridge.Middleware;
-using Horeich.SensingSolutions.Services.StorageAdapter;
-using Horeich.SensingSolutions.Services.Http;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.Runtime;
+using Horeich.Services.VirtualDevice;
+using Horeich.IoTBridge.Runtime;
+using Horeich.IoTBridge.Middleware;
+using Horeich.Services.StorageAdapter;
+using Horeich.Services.Http;  
 
-using System.Reflection;
-
-namespace Horeich.SensingSolutions.IoTBridge
+namespace Horeich.IoTBridge
 {
-
-    //IConfig config = new Config(new ConfigData(new Logger(Uptime.ProcessId, LogLevel.Info)));
     public class Startup
     {
         public Startup(IWebHostEnvironment env)
@@ -57,33 +45,45 @@ namespace Horeich.SensingSolutions.IoTBridge
         /// <returns></returns>
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            //services.AddCors();
-            //services.AddMvc().AddControllersAsServices();
-            //services.AddControllers();
+            // services.AddCors();
+            // services.AddMvc().AddControllersAsServices();
+            // services.AddControllers();
             // Add controller as services so they'll be resolved
             services.AddMvc().AddControllersAsServices();
-            var builder = new ContainerBuilder();
-
+            ContainerBuilder builder = new ContainerBuilder();
+          
             // Add already set up services (DI container) to autofac container automatically (e.g. controller)
             builder.Populate(services);
 
             // Register device bridge controller
             builder.RegisterType<Controllers.DeviceBridgeController>().PropertiesAutowired();
 
-            // Register data handler and configuration as single instance
-            builder.Register(c => new DataHandler(new LocalLogger(Uptime.ProcessId, LogLevel.Info))).As<IDataHandler>().SingleInstance();
-            builder.Register(c => new Config(c.Resolve<IDataHandler>())).As<IConfig>().SingleInstance();
+            // Register logger first which is injected in all other instances
+            builder.Register(c => new Logger(
+                Uptime.ProcessId, 
+                "NLog", 
+                LogLevel.Trace))
+                .As<ILogger>().SingleInstance();
 
-            // Logger
-            builder.Register(c => new Logger(Uptime.ProcessId, c.Resolve<IConfig>().LogConfig)).As<ILogger>().SingleInstance();
+            // Register data handler which reads configuration
+            builder.Register(c => new DataHandler(
+                c.Resolve<ILogger>()))
+                .As<IDataHandler>().SingleInstance();
+
+            // Configuration read only once
+            builder.Register(c => new Config(
+                c.Resolve<IDataHandler>()))
+                .As<IConfig>().SingleInstance();
 
             // Http client (Instance per dependency)
-            builder.Register(c => new HttpClient(c.Resolve<ILogger>())).As<IHttpClient>();
+            builder.Register(c => new HttpClient(
+                c.Resolve<ILogger>()))
+                .As<IHttpClient>(); // Instance per dependency
 
             // Storage adapter client
             builder.Register(c => new StorageAdapterClient(
                 c.Resolve<IHttpClient>(),
-                  c.Resolve<IConfig>().ServicesConfig,
+                c.Resolve<IConfig>().ServicesConfig,
                 c.Resolve<ILogger>())).As<IStorageAdapterClient>().SingleInstance();
 
             // Virtual device manager
@@ -92,15 +92,16 @@ namespace Horeich.SensingSolutions.IoTBridge
                 c.Resolve<IDataHandler>(),
                 c.Resolve<IConfig>().ServicesConfig,
                 c.Resolve<ILogger>())).As<IVirtualDeviceManager>().SingleInstance();
-            // services.AddSingleton<IDeviceLink, DeviceLink>(); // deprecated
 
             // Build container
             ApplicationContainer = builder.Build();
 
-            // Create singletons (config and logger) -> already created in Program.cs
-            // IConfig has its own logger
-            //ApplicationContainer.Resolve<IConfig>();
-            ApplicationContainer.Resolve<ILogger>();
+            IConfig config = ApplicationContainer.Resolve<IConfig>();
+            ILogger logger = ApplicationContainer.Resolve<ILogger>();
+
+            // Set logging config
+            logger.LogLevel = config.LogConfig.LogLevel;
+            logger.ApplicationName = config.ServicesConfig.ApplicationName;
 
             // Add the device bridge service
             return new AutofacServiceProvider(ApplicationContainer);
@@ -117,7 +118,6 @@ namespace Horeich.SensingSolutions.IoTBridge
             IWebHostEnvironment env)//,
            // ILoggerFactory loggerFactory)
         {
-
             // Show exception page during development
             if (env.IsDevelopment())
             {
@@ -135,7 +135,6 @@ namespace Horeich.SensingSolutions.IoTBridge
             //app.UseHttpsRedirection();
 
             app.UseRouting();
-
             app.UseAuthorization();
             //app.UseMvc();
 

@@ -4,9 +4,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace Horeich.SensingSolutions.Services.VirtualDevice
+namespace Horeich.Services.VirtualDevice
 {
-
     public class DeviceTwinCredentials
     {
         public string DeviceId { get; set; }

@@ -1,8 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) HOREICH. All rights reserved.
 
 using System;
 
-namespace Horeich.SensingSolutions.IoTBridge.Runtime
+namespace Horeich.IoTBridge.Runtime
 {
     /// <summary>Simple helper capturing uptime information</summary>
     public static class Uptime
@@ -14,6 +14,6 @@ namespace Horeich.SensingSolutions.IoTBridge.Runtime
         public static TimeSpan Duration => DateTime.UtcNow.Subtract(Start);
 
         /// <summary>A randomly generated ID used to identify the process in the logs</summary>
-        public static string ProcessId { get; } = "WebService." + Guid.NewGuid() + ".IoTBridge";
+        public static string ProcessId { get; } = Guid.NewGuid().ToString();
     }
 }

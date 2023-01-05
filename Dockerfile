@@ -1,6 +1,6 @@
 
 # Set base image and give the build stage a name
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS base
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS base
 
 # Switch container working directory
 WORKDIR /app
@@ -9,7 +9,7 @@ WORKDIR /app
 EXPOSE 9021/tcp
 
 # Set base image and give the build stage a name
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 # COPY FILES AND RESTORE PROJECT DEPENDENCIES
 # Switch container working directory
@@ -24,10 +24,10 @@ COPY . ./
 # COPY ["IoTBridge/IoTBridge.csproj", "IoTBridge/"] 
 
 # Ensure we install all specified dependencies
-RUN dotnet restore "IoTBridge/IoTBridge.csproj"
+RUN dotnet restore "IoTBridge/src/IoTBridge.csproj"
 
 # Switch to .csproj folder
-WORKDIR /src/IoTBridge
+WORKDIR /src/IoTBridge/src
 
 # Build app into app folder
 RUN dotnet build "IoTBridge.csproj" -c Release -o /app/build

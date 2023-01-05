@@ -1,129 +1,155 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) HOREICH. All rights reserved.
 
 using System;
+using System.Threading;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-
-using Horeich.SensingSolutions.Services.Runtime;
+using Horeich.Services.Runtime;
 using Microsoft.ApplicationInsights.NLogTarget;
 using NLog.Config;
+using NLog;
+using NLog.Web;
 
-
-namespace Horeich.SensingSolutions.Services.Diagnostics
+namespace Horeich.Services.Diagnostics
 {
     public interface ILogger
     {
         // The following 4 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
-
-        void Debug(string message, Action context);
-        void Info(string message, Action context);
-        void Warn(string message, Action context);
-        void Error(string message, Action context);
+        void Debug(string message);
+        void Info(string message);
+        void Warn(string message);
+        void Error(string message);
+        void Error(Exception exception);
+        LogLevel LogLevel { get; set; }
+        String ApplicationName { get; set; }
 
         // The following 4 methods allow to log a message and some data,
         // capturing the context (i.e. the method where the log message is generated)
-
-         void Debug(string message, Func<object> context);
-         void Info(string message, Func<object> context);
-         void Warn(string message, Func<object> context);
-         void Error(string message, Func<object> context);
     }
 
     public class Logger : ILogger
-    {
-        // private readonly string _processId;
-        // private readonly LogLevel _defaultLogLevel;
-        // private readonly LogLevel _remoteLogLevel;
-        // private readonly NLog.Logger _insightsLog; 
-        private readonly ILocalLogger _localLogger;
-        private readonly IInsightsLogger _insightLogger;
-        public Logger(string processId, ILogConfig logConfig)
+    { 
+        private readonly NLog.Logger logger;
+        private string _processId;
+        private readonly string _name;
+        public LogLevel LogLevel { get; set; }
+        public String ApplicationName { get; set; }
+
+        public Logger(string processId, string name, LogLevel logLevel)
         {
-            _insightLogger = new InsightsLogger(processId, logConfig.RemoteLogLevel, logConfig.InstrumentationKey);
-            _localLogger = new LocalLogger(processId, logConfig.DefaultLogLevel);
+            this._processId = processId;
+            this._name = name;
+            this.LogLevel = logLevel;
+            ApplicationName = "";
+
+            logger = NLogBuilder
+                .ConfigureNLog(GetLogConfigFileName()) // give NLog the right file to load for the environment
+                .GetCurrentClassLogger();
+
+            ReadOnlyCollection<NLog.Targets.Target> targets = NLog.LogManager.Configuration.AllTargets;
+            foreach (var target in targets)
+            {
+                Info($"Logging to {target}");
+            }
+            logger.Factory.Flush(TimeSpan.FromSeconds(1000));
+        }
+
+        public static string GetLogConfigFileName()
+        {
+            string env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            
+            // Set default
+            if (String.IsNullOrEmpty(env))
+            {
+                return "nlog.Debug.config";
+            }
+            if (env.Equals("Release", System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                return "nlog.Release.config";
+            }
+            else if (env.Equals(value: "Staging", System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                return "nlog.Debug.config";
+            }
+            else // fall back to debug settings by default
+            {
+                return "nlog.Debug.config";
+            }
         }
 
         // The following 4 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
-        public void Debug(string message, Action context)
+        public void Debug(string message)
         {
-            _localLogger.Debug(message, context);
-            _insightLogger.Debug(message, context);
+            if (this.LogLevel > LogLevel.Debug) return;
+            Log(message, LogLevel.Debug, null);
         }
 
-        public void Info(string message, Action context)
+        public void Info(string message)
         {
-            _localLogger.Info(message, context);
-            _insightLogger.Info(message, context);
+            if (this.LogLevel > LogLevel.Info) return;
+            Log(message, LogLevel.Info, null);
         }
 
-        public void Warn(string message, Action context)
+        public void Warn(string message)
         {
-            _localLogger.Warn(message, context);
-            _insightLogger.Warn(message, context);
+            if (this.LogLevel > LogLevel.Warn) return;
+            Log(message, LogLevel.Warn, null);
         }
 
-        public void Error(string message, Action context)
+        public void Error(string message)
         {
-            _localLogger.Error(message, context);
-            _insightLogger.Error(message, context);
+            if (this.LogLevel > LogLevel.Error) return;
+            Log(message, LogLevel.Error, null);
         }
 
-        // The following 4 methods allow to log a message and some data,
-        // capturing the context (i.e. the method where the log message is generated)
-        public void Debug(string message, Func<object> context)
+        public void Error(Exception exception)
         {
-            _localLogger.Debug(message, context);
-            _insightLogger.Debug(message, context);
+            Log("", LogLevel.Error, exception);
         }
 
-        public void Info(string message, Func<object> context)
+        private void Log(string message, LogLevel logLevel, Exception exception)
         {
-            _localLogger.Info(message, context);
-            _insightLogger.Info(message, context);
+            var logEventInfo = new LogEventInfo(GetLogLevel(logLevel), _name, message); //, $"{formatter(state, exception)}");
+            if (exception != null)
+            {
+                logEventInfo.Exception = exception;
+            }
+
+            logger
+                // These properties are predefined in nlog.config
+                // .WithProperty("UserId", userContext.Id)
+                // .WithProperty("Time", DateTime.Now)
+                .WithProperty("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+                .WithProperty("ThreadId", Thread.CurrentThread.ManagedThreadId)
+                .WithProperty("ProcessId", ApplicationName + "." + _processId)
+                // .WithProperty("Channel", userContext.AuthenticatedUserId) 
+                // .WithProperty("UserAgent", requestContext.UserAgent)
+                // .WithProperty("CorrelationId", requestContext.CorrelationId)
+                // .WithProperty("EventId", eventId.Id)
+                .Log(logEventInfo);
         }
 
-        public void Warn(string message, Func<object> context)
+        internal NLog.LogLevel GetLogLevel(LogLevel level)
         {
-            _localLogger.Warn(message, context);
-            _insightLogger.Warn(message, context);
+            switch (level)
+            {
+                case LogLevel.Trace:
+                    return NLog.LogLevel.Trace;
+                case LogLevel.Debug:
+                    return NLog.LogLevel.Debug;
+                case LogLevel.Info:
+                    return NLog.LogLevel.Info;
+                case LogLevel.Warn:
+                    return NLog.LogLevel.Warn;
+                case LogLevel.Error:
+                    return NLog.LogLevel.Error;
+                case LogLevel.Critical:
+                    return NLog.LogLevel.Fatal;
+            }
+            return NLog.LogLevel.Info;
         }
-
-        public void Error(string message, Func<object> context)
-        {
-            _localLogger.Error(message, context);
-            _insightLogger.Error(message, context);
-        }
-
-        // /// <summary>
-        // /// Log the message and information about the context, cleaning up
-        // /// and shortening the class name and method name (e.g. removing
-        // /// symbols specific to .NET internal implementation)
-        // /// </summary>
-        // private void Write(string level, MethodInfo context, string text)
-        // {
-        //     // Extract the Class Name from the context
-        //     var classname = "";
-        //     if (context.DeclaringType != null)
-        //     {
-        //         classname = context.DeclaringType.FullName;
-        //     }
-        //     classname = classname.Split(new[] { '+' }, 2).First();
-        //     classname = classname.Split('.').LastOrDefault();
-
-        //     // Extract the Method Name from the context
-        //     var methodname = context.Name;
-        //     methodname = methodname.Split(new[] { '>' }, 2).First();
-        //     methodname = methodname.Split(new[] { '<' }, 2).Last();
-
-        //     var time = DateTimeOffset.UtcNow.ToString("u");
-        //     Console.WriteLine($"[{this.processId}][{time}][{level}][{classname}:{methodname}] {text}");
-        // }
-
-        // private void WriteToJson(string level, MethodInfo context, string text)
-        // {
-            
-        // }
     }
 }

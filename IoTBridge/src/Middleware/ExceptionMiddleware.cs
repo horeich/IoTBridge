@@ -1,3 +1,5 @@
+// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -5,10 +7,10 @@ using Microsoft.AspNetCore.Http;
 using System.Net;
 using Newtonsoft.Json;
 
-using Horeich.SensingSolutions.Services.Diagnostics;
-using Horeich.SensingSolutions.Services.Exceptions;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.Exceptions;
 
-namespace Horeich.SensingSolutions.IoTBridge.Middleware
+namespace Horeich.IoTBridge.Middleware
 {
     // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
     public class ExceptionMiddleware
@@ -36,7 +38,7 @@ namespace Horeich.SensingSolutions.IoTBridge.Middleware
             }
             catch (Exception e)
             {
-                //_logger.Debug($"Error: {e}", () => {});
+                //_logger.Debug($"Error: {e}");
                 await HandleExceptionAsync(httpContext, e);
             }
         }
@@ -54,41 +56,41 @@ namespace Horeich.SensingSolutions.IoTBridge.Middleware
             // Bad request exceptions
             if (e is DeviceIdentityException) // wrong identity sent
             {
-                _logger.Error(string.Format("Invalid device identity string: {0}", e.Message), () => {});
+                _logger.Error(string.Format("Invalid device identity string: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;
             }    
             else if (e is ArgumentOutOfRangeException) // empty identity sent
             {
-                _logger.Error(string.Format("Invalid device identity string: {0}", e.Message), () => {});
+                _logger.Error(string.Format("Invalid device identity string: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;
             }
              else if (e is NullReferenceException) // variable is null
             {
-                _logger.Error(string.Format("Invalid data format: {0}", e.Message), () => {});
+                _logger.Error(string.Format("Invalid data format: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;
             }
             else if (e is FormatException) // wrong data format
             {
-                _logger.Error(string.Format("Invalid data format: {0}", e.Message), () => {});
+                _logger.Error(string.Format("Invalid data format: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;
             }
 
             // Internal server exceptions
             else if (e is OperationCanceledException) // send to IoT Hub timeout
             {
-                _logger.Error(string.Format("Timeout error while sending message to IoT Hub: {0}", e.Message), () => {});   
+                _logger.Error(string.Format("Timeout error while sending message to IoT Hub: {0}", e.Message));   
                 code = HttpStatusCode.InternalServerError;
             }
 
             // Cannot reach storage adapter
             else if (e is ExternalDependencyException)
             {
-                _logger.Error(string.Format("Cannot reach storage adapter: {0}", e.Message), () => {}); //=> new { DateTime.Now });   
+                _logger.Error(string.Format("Cannot reach storage adapter: {0}", e.Message)); //=> new { DateTime.Now });   
                 code = HttpStatusCode.InternalServerError;
             }
             else if (e is Exception)
             {
-                _logger.Error(string.Format("fatal error: {0}", e.Message), () => {});
+                _logger.Error(string.Format("fatal error: {0}", e.Message));
                 code = HttpStatusCode.InternalServerError;
             }
         

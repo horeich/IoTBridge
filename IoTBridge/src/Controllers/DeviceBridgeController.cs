@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
+
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-using System.Text.Encodings.Web;
-using System.Web;
-using System.Net;
-using Microsoft.Azure.Devices.Client;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.VirtualDevice;
 
-using Horeich.SensingSolutions.Services.Diagnostics;
-using Horeich.SensingSolutions.Services.VirtualDevice;
-
-namespace Horeich.SensingSolutions.IoTBridge.Controllers
+namespace Horeich.IoTBridge.Controllers
 {
     [ApiController]
     public class DeviceBridgeController : ControllerBase
@@ -33,7 +27,7 @@ namespace Horeich.SensingSolutions.IoTBridge.Controllers
         }
 
         [HttpPut("{deviceId}/telemetry")]
-        public async Task<IActionResult> PutAsync(string deviceId, [FromBody]DeviceTelemetry telemetry)
+        public async Task<IActionResult> PutAsync(string deviceId, [FromQuery]DeviceTelemetry telemetry)
         {
             // Send data asynchronously
             await _deviceManager.BridgeDeviceAsync(deviceId, telemetry);

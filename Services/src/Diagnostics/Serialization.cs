@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
 
-namespace Horeich.SensingSolutions.Services.Diagnostics
+namespace Horeich.Services.Diagnostics
 {
     public class Serialization
     {

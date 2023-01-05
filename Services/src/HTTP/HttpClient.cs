@@ -4,9 +4,9 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 //using Microsoft.Azure.IoTSolutions.IotHubManager.Services.Diagnostics;
-using Horeich.SensingSolutions.Services.Diagnostics;
+using Horeich.Services.Diagnostics;
 
-namespace Horeich.SensingSolutions.Services.Http
+namespace Horeich.Services.Http
 {
     public interface IHttpClient
     {
@@ -27,10 +27,10 @@ namespace Horeich.SensingSolutions.Services.Http
 
     public class HttpClient : IHttpClient
     {
-        private readonly ILogger log;
+        private readonly ILogger _logger;
         public HttpClient(ILogger logger)
         {
-            this.log = logger;
+            this._logger = logger;
         }
 
         public async Task<IHttpResponse> GetAsync(IHttpRequest request)
@@ -84,7 +84,7 @@ namespace Horeich.SensingSolutions.Services.Http
                 SetContent(request, httpMethod, httpRequest);
                 SetHeaders(request, httpRequest);
 
-                this.log.Debug("Sending request", () => new { httpMethod, request.Uri, request.Options });
+                _logger.Debug($"Sending request { httpMethod} {request.Uri} {request.Options }");
 
                 try
                 {
@@ -109,13 +109,7 @@ namespace Horeich.SensingSolutions.Services.Http
                         errorMessage += " - " + e.InnerException.Message;
                     }
 
-                    this.log.Error("Request failed", () => new
-                    {
-                        ExceptionMessage = e.Message,
-                        InnerExceptionType = e.InnerException != null ? e.InnerException.GetType().FullName : "",
-                        InnerExceptionMessage = e.InnerException != null ? e.InnerException.Message : "",
-                        errorMessage
-                    });
+                    _logger.Error(e);
 
                     return new HttpResponse
                     {

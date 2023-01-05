@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Horeich.SensingSolutions.Services.Exceptions
+namespace Horeich.Services.Exceptions
 {
     /// <summary>
     /// This exception is thrown when the service failed to communicate with

@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Horeich.SensingSolutions.Services.Diagnostics;
-using Horeich.SensingSolutions.Services.Exceptions;
-using Horeich.SensingSolutions.Services.Http;
-using Horeich.SensingSolutions.Services.Runtime;
 
-//using Horeich.SensingSolutions.Services.Storage.StorageAdapter;
+using Horeich.Services.Diagnostics;
+using Horeich.Services.Exceptions;
+using Horeich.Services.Http;
+using Horeich.Services.Runtime;
+
 using Newtonsoft.Json;
 
-namespace Horeich.SensingSolutions.Services.StorageAdapter
+namespace Horeich.Services.StorageAdapter
 {
     public interface IStorageAdapterClient
     {
