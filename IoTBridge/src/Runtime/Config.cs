@@ -107,7 +107,7 @@ namespace Horeich.IoTBridge.Runtime
 
             this.ServicesConfig = new ServicesConfig
             {
-                ApplicationName = dataHandler.GetString(APPLICATION_NAME),
+                ApplicationNameKey = dataHandler.GetString(APPLICATION_NAME),
                 StorageAdapterDocumentKey = dataHandler.GetString(STORAGE_DOCUMENT_KEY),
                 StorageAdapterDeviceCollectionKey = dataHandler.GetString(STORAGE_DEVICE_COLLECTION_KEY),
                 StorageAdapterMappingCollection = dataHandler.GetString(STORAGE_MAPPING_COLLECTION_KEY),

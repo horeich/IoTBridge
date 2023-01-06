@@ -4,7 +4,7 @@ namespace Horeich.Services.Runtime
 {   
     public interface IServicesConfig
     {
-        string ApplicationName { get; }
+        string ApplicationNameKey { get; }
         string StorageAdapterDocumentKey { get; }
         string StorageAdapterDeviceCollectionKey { get; }
         string StorageAdapterMappingCollection { get; }
@@ -42,7 +42,7 @@ namespace Horeich.Services.Runtime
     }
     public class ServicesConfig : IServicesConfig
     {
-        public string ApplicationName { get; set; }
+        public string ApplicationNameKey { get; set; }
         public string StorageAdapterDocumentKey { get; set; }
         public string StorageAdapterDeviceCollectionKey { get; set; }
         public string StorageAdapterMappingCollection { get; set; }

@@ -101,7 +101,7 @@ namespace Horeich.IoTBridge
 
             // Set logging config
             logger.LogLevel = config.LogConfig.LogLevel;
-            logger.ApplicationName = config.ServicesConfig.ApplicationName;
+            logger.ApplicationName = config.ServicesConfig.ApplicationNameKey;
 
             // Add the device bridge service
             return new AutofacServiceProvider(ApplicationContainer);

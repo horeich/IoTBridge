@@ -63,19 +63,19 @@ namespace Horeich.Services.Diagnostics
             // Set default
             if (String.IsNullOrEmpty(env))
             {
-                return "nlog.Debug.config";
+                return "nlog.debug.config";
             }
             if (env.Equals("Release", System.StringComparison.InvariantCultureIgnoreCase))
             {
-                return "nlog.Release.config";
+                return "nlog.release.config";
             }
             else if (env.Equals(value: "Staging", System.StringComparison.InvariantCultureIgnoreCase))
             {
-                return "nlog.Debug.config";
+                return "nlog.debug.config";
             }
             else // fall back to debug settings by default
             {
-                return "nlog.Debug.config";
+                return "nlog.debug.config";
             }
         }
 

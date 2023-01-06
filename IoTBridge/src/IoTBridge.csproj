@@ -8,7 +8,6 @@
     <PackageReference Include="Autofac" Version="6.5.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.38.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../Services/src/Services.csproj" />
@@ -19,9 +18,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
+  <!-- <ItemGroup>
     <Content Include="nlog.$(Configuration).config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
+  </ItemGroup> -->
 </Project>

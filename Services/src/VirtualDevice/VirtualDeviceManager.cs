@@ -71,41 +71,6 @@ namespace Horeich.Services.VirtualDevice
             }
         }
 
-        /// <summary>
-        /// Periodically running task to free unused resources
-        /// </summary>
-        /// <param name="updateInterval"></param>
-        /// <returns></returns>
-        // private async void UpdateDeviceList(int updateInterval)
-        // {
-        //     await Task.Run(async () =>
-        //     {
-        //         int count = 1;
-        //         while (count > 0)
-        //         {
-        //             await Task.Delay(updateInterval).ConfigureAwait(false);
-        //             await _semaphore.WaitAsync();
-        //             try
-        //             {
-        //                 foreach (KeyValuePair<string, IVirtualDevice> device in _devices)
-        //                 {
-        //                     bool active = await device.Value.IsActive();
-        //                     if (!active)
-        //                     {
-        //                         _logger.Info($"Removing device '{device.Value.DeviceId}' from device list");
-        //                         _devices.Remove(device.Key);
-        //                     }
-        //                 }
-        //                 count = _devices.Count;
-        //             }
-        //             finally
-        //             {
-        //                 _semaphore.Release();
-        //             }
-        //         }
-        //     });
-        // }
-
         private async Task UpdateDevices()
         {
             while (true)
@@ -183,7 +148,7 @@ namespace Horeich.Services.VirtualDevice
 
                 // Get reference to existing virtual sensor
                 IVirtualDevice device = _devices[deviceId];
-                
+
                 // Send telemetry async
                 await device.SendDeviceTelemetryAsync(telemetry.Data, _config.IoTHubTimeout);
                 _logger.Debug("Telemetry successfully sent to IoT Central");
@@ -195,3 +160,38 @@ namespace Horeich.Services.VirtualDevice
         }
     }
 }
+
+/// <summary>
+/// Periodically running task to free unused resources
+/// </summary>
+/// <param name="updateInterval"></param>
+/// <returns></returns>
+// private async void UpdateDeviceList(int updateInterval)
+// {
+//     await Task.Run(async () =>
+//     {
+//         int count = 1;
+//         while (count > 0)
+//         {
+//             await Task.Delay(updateInterval).ConfigureAwait(false);
+//             await _semaphore.WaitAsync();
+//             try
+//             {
+//                 foreach (KeyValuePair<string, IVirtualDevice> device in _devices)
+//                 {
+//                     bool active = await device.Value.IsActive();
+//                     if (!active)
+//                     {
+//                         _logger.Info($"Removing device '{device.Value.DeviceId}' from device list");
+//                         _devices.Remove(device.Key);
+//                     }
+//                 }
+//                 count = _devices.Count;
+//             }
+//             finally
+//             {
+//                 _semaphore.Release();
+//             }
+//         }
+//     });
+// }
