@@ -31,10 +31,6 @@ namespace Horeich.IoTBridge.Runtime
         // Update interval
         private const string DEVICE_UPDATE_INTERVAL = APPLICATION_KEY + "DeviceUpdateInterval";
 
-        // DTDL config
-        private const string DIGITAL_TWINS_KEY = "DigitalTwins:";
-        private const string DIGITAL_TWINS_HOST_NAME = DIGITAL_TWINS_KEY + "HostName";
-
         //private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iotHubConnectionString";
         private const string DEVICE_PROPERTIES_KEY = APPLICATION_KEY + "DevicePropertiesCache:"; 
         private const string DEVICE_PROPERTIES_WHITELIST_KEY = DEVICE_PROPERTIES_KEY + "whitelist";
@@ -119,7 +115,6 @@ namespace Horeich.IoTBridge.Runtime
                 StorageAdapterApiTimeout = dataHandler.GetInt(STORAGE_URL_TIMEOUT),
                 IoTHubTimeout = dataHandler.GetInt(IOT_HUB_TIMEOUT),
                 DeviceUpdateInterval = dataHandler.GetInt(DEVICE_UPDATE_INTERVAL),
-                DigitalTwinHostName = dataHandler.GetString(DIGITAL_TWINS_HOST_NAME),
                 //UserManagementApiUrl = configData.GetString(USER_MANAGEMENT_URL_KEY)
             };
 

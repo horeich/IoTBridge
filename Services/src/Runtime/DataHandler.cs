@@ -38,7 +38,6 @@ namespace Horeich.Services.Runtime
         private const string CLIENT_ID = "KeyVault:AADClientId";
         private const string CLIENT_SECRET = "KeyVault:AADClientSecret";
         private const string KEY_VAULT_NAME = "KeyVault:Name";
-        private const string DEVICE_ID = "Device:Id";
 
         public DataHandler(ILogger logger)
         {

@@ -12,7 +12,6 @@ namespace Horeich.Services.Runtime
         int StorageAdapterApiTimeout { get; }
         int IoTHubTimeout { get; }
         int DeviceUpdateInterval { get; }
-        string DigitalTwinHostName { get; }
 
         // string UserManagementApiUrl { get; }
         // StorageConfig MessagesConfig { get; set; }
@@ -50,8 +49,6 @@ namespace Horeich.Services.Runtime
         public int StorageAdapterApiTimeout { get; set; }
         public int IoTHubTimeout { get; set; }
         public int DeviceUpdateInterval { get; set; }
-
-        public string DigitalTwinHostName { get; set; }
         // string UserManagementApiUrl { get; }
         // StorageConfig MessagesConfig { get; set; }
         // AlarmsConfig AlarmsConfig { get; set; }

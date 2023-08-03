@@ -64,6 +64,10 @@ namespace Horeich.Services.VirtualDevice
             {
                 return typeof(float);
             }
+            else if (string.Compare(dataType, "long") == 0)
+            {
+                return typeof(long);
+            }
             else
             {
                 // Unknown payload type
