@@ -1,4 +1,4 @@
-// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
+// Copyright (c) Horeich GmbH. All rights reserved
 
 using System;
 using Microsoft.AspNetCore.Builder;
@@ -24,14 +24,11 @@ namespace Horeich.IoTBridge
     {
         public Startup(IWebHostEnvironment env)
         {
+            // The appsettings.json file will be copied to the binary folder
             var configBuilder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true); //
             configBuilder.Build();
-        }
-        public Startup(IConfiguration configuration)
-        {
-        //     Configuration = configuration;
         }
 
         public IConfigurationRoot Configuration { get; }
@@ -108,7 +105,7 @@ namespace Horeich.IoTBridge
         }
 
         /// <summary>
-        /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline and add middleware.
         /// </summary>
         /// <param name="app"></param>
         /// <param name="env"></param>

@@ -1,5 +1,8 @@
+// (c) 2024 HOREICH GmbH
+
 using Horeich.Services.Diagnostics;
-using Microsoft.Azure.KeyVault;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Identity;
 
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using System;
@@ -15,7 +18,7 @@ namespace Horeich.Services.Runtime
         private readonly string _clientId;
         private readonly string _clientSecret;
         private ILogger _log;
-        private readonly KeyVaultClient _keyVaultClient;
+        private readonly SecretClient _secretClient;
         private const string KEY_VAULT_URI = "https://{0}.vault.azure.net/secrets/{1}";
 
         public KeyVault(string name, string clientId,  string clientSecret, ILogger logger)
@@ -24,7 +27,11 @@ namespace Horeich.Services.Runtime
             _clientId = clientId;
             _clientSecret = clientSecret;
             _log = logger;
-            _keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(this.GetToken));
+
+            var uriString = string.Format("https://{0}.vault.azure.net", _name);
+
+            // Note: creates a new HTTP client internally
+            _secretClient = new SecretClient(new Uri(uriString), new DefaultAzureCredential()); //new KeyVaultClient.AuthenticationCallback(this.GetToken));
         }
 
         /// <summary>
@@ -39,7 +46,9 @@ namespace Horeich.Services.Runtime
 
             try
             {
-                return _keyVaultClient.GetSecretAsync(uri).Result.Value;
+                KeyVaultSecret secret = _secretClient.GetSecretAsync(secretKey).Result.Value;
+                return secret.Value;
+                //return _keyVaultClient.GetSecretAsync(uri).Result.Value;
             }
             catch (Exception)
             {

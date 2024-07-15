@@ -1,4 +1,4 @@
-// Copyright (c) Horeich UG. All rights reserved
+// Copyright (c) Horeich GmbH. All rights reserved
 
 using System;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +19,8 @@ namespace Horeich.IoTBridge
         public static void Main(string[] args)
         {
             IConfig config = new Config(new DataHandler(new Logger(Uptime.ProcessId,"NLog", LogLevel.Info)));
+
+            // var builder = WebApplication.CreateBuilder(args);
 
             var host = new WebHostBuilder()
                 .UseUrls("http://*:" + config.Port) // the port to listen to
