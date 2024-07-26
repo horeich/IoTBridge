@@ -29,3 +29,9 @@ the appsettings.Staging.json will be copied as appsettings.json in the output fo
 
 ## Migration to Azure.Security.KeyVault.Secrets
 https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/keyvault/Azure.Security.KeyVault.Secrets/MigrationGuide.md
+
+
+## Create VM
+* West Europe
+* Naming convention horeich-{number}
+* Create virtual network horeich-{number}-vnet

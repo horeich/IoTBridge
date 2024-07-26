@@ -47,6 +47,8 @@ namespace Horeich.IoTBridge
             // services.AddControllers();
             // Add controller as services so they'll be resolved
             services.AddMvc().AddControllersAsServices();
+
+            // New container
             ContainerBuilder builder = new ContainerBuilder();
           
             // Add already set up services (DI container) to autofac container automatically (e.g. controller)

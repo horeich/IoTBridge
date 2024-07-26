@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{D32B2F71-E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTBridge.Test", "IoTBridge\test\IoTBridge.Test\IoTBridge.Test.csproj", "{F906D482-C23C-42A3-AE60-3E943220F46A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service.Test", "Service.Test\Service.Test.csproj", "{0588BF66-3408-4A4B-A1E5-986594F9B4C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{F906D482-C23C-42A3-AE60-3E943220F46A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F906D482-C23C-42A3-AE60-3E943220F46A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F906D482-C23C-42A3-AE60-3E943220F46A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0588BF66-3408-4A4B-A1E5-986594F9B4C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0588BF66-3408-4A4B-A1E5-986594F9B4C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0588BF66-3408-4A4B-A1E5-986594F9B4C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0588BF66-3408-4A4B-A1E5-986594F9B4C4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

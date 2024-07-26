@@ -79,6 +79,8 @@ namespace Horeich.Services.VirtualDevice
         {
             while (true)
             {
+                // tODO: add cancellationtoken
+                // TODO: load all from database and set offline
                 await Task.Delay(TimeSpan.FromSeconds(_config.DeviceUpdateInterval)).ConfigureAwait(false);
                 await _semaphore.WaitAsync();
                 try
