@@ -48,7 +48,7 @@ namespace Horeich.Services.VirtualDevice
             _mapping = model.Mapping;
             DeviceId = model.DeviceId;
             _deviceKey = model.DeviceKey;
-            _hubString = model.HubString;
+            _hubString = model.HubConnString;
             _sendInterval = TimeSpan.FromSeconds(model.SendInterval);
             _properties = model.Properties;
             _properties.Add("Status", "online");
@@ -57,7 +57,7 @@ namespace Horeich.Services.VirtualDevice
 
             // Create iot hub device client
             IAuthenticationMethod authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(model.DeviceId, model.DeviceKey);
-            _client = DeviceClient.Create(model.HubString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Amqp);
+            _client = DeviceClient.Create(model.HubConnString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Amqp);
         }
 
         ~VirtualDevice()

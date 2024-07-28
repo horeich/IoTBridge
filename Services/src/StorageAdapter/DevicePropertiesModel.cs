@@ -29,7 +29,7 @@ namespace Horeich.Services.StorageAdapter
         [JsonProperty("ETag")]
         public string ETag { get; set; }
 
-        public ValueApiModel()
+        public DevicePropertiesModel()
         {
 
         }

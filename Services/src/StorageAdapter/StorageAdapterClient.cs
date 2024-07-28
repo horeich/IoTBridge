@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -16,7 +17,12 @@ namespace Horeich.Services.StorageAdapter
     public interface IStorageAdapterClient
     {
         //Task<ValueListApiModel> GetAllAsync(string collectionId);
-        Task<ValueApiModel> GetAsync(string collectionId, string key);
+        Task<DevicePropertiesServiceModel> GetAsync(string collectionId, string key);
+
+        Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId);
+
+        Task<DevicePropertiesServiceModel> GetDeviceMappingAsync(string deviceType, string version);
+
         // Task<ValueApiModel> CreateAsync(string collectionId, string value);
         // Task<ValueApiModel> UpsertAsync(string collectionId, string key, string value, string etag);
         // Task DeleteAsync(string collectionId, string key);
@@ -44,7 +50,7 @@ namespace Horeich.Services.StorageAdapter
             this.timeout = config.StorageAdapterApiTimeout;
         }
 
-        public async Task<ValueApiModel> GetAsync(string collectionId, string key)
+        public async Task<DevicePropertiesServiceModel> GetAsync(string collectionId, string key)
         {
             var response = await this.httpClient.GetAsync(
                 this.PrepareRequest($"collections/{collectionId}/values/{key}"));
@@ -52,11 +58,35 @@ namespace Horeich.Services.StorageAdapter
             this.ThrowIfError(response, collectionId, key);
 
             // Deserialize Http message into value API model (TODO: Throws JsonSerializationException)
-            return JsonConvert.DeserializeObject<ValueApiModel>(response.Content,
+            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
-        private HttpRequest PrepareRequest(string path, ValueApiModel content = null)
+        public async Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId)
+        {
+            var response = await this.httpClient.GetAsync(
+                this.PrepareRequest($"v1/devices/type/{deviceId}/id/{deviceId}")); // TODO change
+
+            this.ThrowIfError(response, "devices", deviceId);
+
+            // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
+            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+        }
+
+        public async Task<DevicePropertiesServiceModel> GetDeviceMappingAsync(string deviceType, string version)
+        {
+            var response = await this.httpClient.GetAsync(
+                this.PrepareRequest($"v1/mappings/type/{deviceType}/version/{version}"));
+
+            this.ThrowIfError(response, "mappings", String.Format($"{deviceType}.{version}"));
+
+            // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
+            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+        }
+
+        private HttpRequest PrepareRequest(string path, DevicePropertiesServiceModel content = null)
         {
             var request = new HttpRequest();
             request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");

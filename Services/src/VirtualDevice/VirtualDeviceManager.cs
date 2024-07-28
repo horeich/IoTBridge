@@ -1,4 +1,4 @@
-﻿// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
+﻿// Copyright (c) Horeich GmbH, all rights reserved
 
 using System;
 using System.Threading;
@@ -109,13 +109,13 @@ namespace Horeich.Services.VirtualDevice
             model.DeviceId = deviceId;
 
             // Get device info from storage (throws)
-            ValueApiModel result = await _storageClient.GetAsync(_config.StorageAdapterDeviceCollectionKey, deviceId);
+            DevicePropertiesServiceModel result = await _storageClient.GetAsync(_config.StorageAdapterDeviceCollectionKey, deviceId);
             model.SendInterval = result.SendInterval;
-            model.Properties = result.Properties;
+            // model.Properties = result.Properties;
 
             // Get Iot Hub connection string from key vault
-            model.HubString = _dataHandler.GetString(result.HubId, string.Empty) + ".azure-devices.net";
-            if (model.HubString == String.Empty)
+            model.HubConnString = _dataHandler.GetString(result.HubId, string.Empty) + ".azure-devices.net";
+            if (model.HubConnString == String.Empty)
             {
                 throw new InvalidConfigurationException($"Unable to load configuration value for '{result.HubId}'");
             }

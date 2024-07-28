@@ -16,7 +16,7 @@ namespace Horeich.Services.VirtualDevice
     public class DeviceApiModel
     {
         public string DeviceId { get; set; }
-        public string HubString { get; set; }
+        public string HubConnString { get; set; }
         public string DeviceKey { get; set; }
         public int SendInterval { get; set; }
         public List<Tuple<string, Type>> Mapping { get; set; }
