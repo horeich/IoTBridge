@@ -28,7 +28,7 @@ namespace Horeich.Services.VirtualDevice
     public interface IEdgeDevice
     {
         public string Id { get; }
-        Task SendDeviceTelemetryAsync(List<string> telemetryDataPoints, int timeout);
+        Task SendDeviceTelemetryAsync(List<string> telemetryDataPoints, CancellationToken token);
         Task<bool> UpdateConnectionStatusAsync();
     }
 
@@ -65,7 +65,7 @@ namespace Horeich.Services.VirtualDevice
                 await _edgeDevice.UpdateDevicePropertiesAsync(_edgeDevice.DeviceInfoProperties, token);
 
                 // Enable destroy client on timeout
-                _edgeDevice.EnableDeviceTimeout();
+                // _edgeDevice.EnableDeviceTimeout();
             }
             catch (Exception e)
             {
@@ -152,6 +152,8 @@ namespace Horeich.Services.VirtualDevice
                 Dictionary<string, string> properties = new Dictionary<string, string>();
                 properties.Add("Status", "offline");
                 await UpdateDevicePropertiesAsync(properties, token);
+
+                await _client.CloseAsync();
             }
         }
 

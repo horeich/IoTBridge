@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IoTBridge.Test")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+74d9a05a0cada46cd80d6e3758f830f8dbfd6da0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32423e2212c2991bcac2abde839e4190d7e0b1a7")]
 [assembly: System.Reflection.AssemblyProductAttribute("IoTBridge.Test")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IoTBridge.Test")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

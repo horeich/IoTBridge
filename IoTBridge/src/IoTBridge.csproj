@@ -16,7 +16,7 @@
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.11.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../Services/src/Services.csproj" />
+    <ProjectReference Include="../../Services/Services.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="appsettings.$(Configuration).json">

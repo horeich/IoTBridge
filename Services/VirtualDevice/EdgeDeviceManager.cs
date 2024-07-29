@@ -18,8 +18,6 @@ namespace Horeich.Services.VirtualDevice
     {
         Task SendTelemetryAsync(string deviceId, DeviceTelemetry telemetry);
         Task DisconnectDeviceAsync(string deviceId);
-        Task StartRecurringJobAsync();
-
     }
 
     public class EdgeDeviceManager : IEdgeDeviceManager
@@ -30,7 +28,6 @@ namespace Horeich.Services.VirtualDevice
         private readonly IServicesConfig _config;
         private readonly IStorageAdapterClient _storageClient;
         private CancellationTokenSource _cts;
-        private readonly BackgroundJobClient _backgroundClient;
 
         // As it's a single semaphore the implmentation of IDisposable will be foregone
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
@@ -120,8 +117,8 @@ namespace Horeich.Services.VirtualDevice
             finally
             {
                 // The edge device will be disposed in any case
+                _devices.Remove(edgeDevice.Id);
                 edgeDevice?.Dispose();
-                _devices[edgeDevice.Id] = null;
                 _semaphore.Release();
             }
         }
@@ -147,7 +144,7 @@ namespace Horeich.Services.VirtualDevice
                     edgeDevice = new EdgeDevice(model, OnDisconnectDeviceAsync, _logger);
 
                     // (throws)
-                    await edgeDevice.UpdateDevicePropertiesAsync(edgeDevice.DeviceInfoProperties, _cts.Token);
+                    await edgeDevice.SetOnlineStatusPropertyAsync(true, _cts.Token);
 
                     _devices.Add(model.DeviceId, edgeDevice);
                 }
@@ -177,8 +174,8 @@ namespace Horeich.Services.VirtualDevice
                     await edgeDevice.SetOnlineStatusPropertyAsync(false, _cts.Token);
                     
                     // Only dispose if there is no preceeding exception
+                    _devices.Remove(edgeDevice.Id);
                     edgeDevice?.Dispose();
-                    _devices[edgeDevice.Id] = null;
                 }
             }
             catch (Exception ex)
