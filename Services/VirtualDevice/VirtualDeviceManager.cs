@@ -103,9 +103,9 @@ namespace Horeich.Services.VirtualDevice
             }
         }
 
-        private async Task<DeviceApiModel> LoadDeviceApiModelAsync(string deviceId)
+        private async Task<DeviceDataModel> LoadDeviceApiModelAsync(string deviceId)
         {
-            DeviceApiModel model = new DeviceApiModel();
+            DeviceDataModel model = new DeviceDataModel();
             model.DeviceId = deviceId;
 
             // Get device info from storage (throws)
@@ -148,7 +148,7 @@ namespace Horeich.Services.VirtualDevice
                 if (!_devices.ContainsKey(deviceId))
                 {
                     _logger.Info($"Adding device '{deviceId}' to internal device list");
-                    DeviceApiModel model = await LoadDeviceApiModelAsync(deviceId);
+                    DeviceDataModel model = await LoadDeviceApiModelAsync(deviceId);
                     _devices.Add(model.DeviceId, await VirtualDevice.Create(model, _logger)); // TODO own data handler?
                 }
 

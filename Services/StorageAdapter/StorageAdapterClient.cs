@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Horeich GmbH, all rights reserved
 
 using System;
 using System.Net;
@@ -21,7 +21,7 @@ namespace Horeich.Services.StorageAdapter
 
         Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId);
 
-        Task<DevicePropertiesServiceModel> GetDeviceMappingAsync(string deviceType, string version);
+        Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version);
 
         // Task<ValueApiModel> CreateAsync(string collectionId, string value);
         // Task<ValueApiModel> UpsertAsync(string collectionId, string key, string value, string etag);
@@ -65,7 +65,7 @@ namespace Horeich.Services.StorageAdapter
         public async Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId)
         {
             var response = await this.httpClient.GetAsync(
-                this.PrepareRequest($"v1/devices/type/{deviceId}/id/{deviceId}")); // TODO change
+                this.PrepareRequest($"devices/type/device/id/{deviceId}")); // v1 is added
 
             this.ThrowIfError(response, "devices", deviceId);
 
@@ -74,15 +74,16 @@ namespace Horeich.Services.StorageAdapter
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
-        public async Task<DevicePropertiesServiceModel> GetDeviceMappingAsync(string deviceType, string version)
+        public async Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version)
         {
+            // TODO: HTTP timeout
             var response = await this.httpClient.GetAsync(
-                this.PrepareRequest($"v1/mappings/type/{deviceType}/version/{version}"));
+                this.PrepareRequest($"mappings/type/{deviceType}/version/{version}")); // v1 is added
 
             this.ThrowIfError(response, "mappings", String.Format($"{deviceType}.{version}"));
 
             // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
-            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
+            return JsonConvert.DeserializeObject<MappingServiceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 

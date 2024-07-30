@@ -5,17 +5,13 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IoTBridge", "IoTBridge", "{2B944E92-9045-4CC4-96F3-6B0D6B1DC0DE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTBridge", "IoTBridge\src\IoTBridge.csproj", "{6A81ACFA-F2D5-4B27-A465-7B368A61FD03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTBridge", "IoTBridge\IoTBridge.csproj", "{6A81ACFA-F2D5-4B27-A465-7B368A61FD03}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{C74CE75D-CFF0-4BE2-B72B-6BE2BB9FAE74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "Services\src\Services.csproj", "{826EAD75-AAEE-4CA2-B004-1ED71BD4ABE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "Services\Services.csproj", "{826EAD75-AAEE-4CA2-B004-1ED71BD4ABE8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{D32B2F71-E4EB-4065-B5DF-6C5B907EBD2C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTBridge.Test", "IoTBridge\test\IoTBridge.Test\IoTBridge.Test.csproj", "{F906D482-C23C-42A3-AE60-3E943220F46A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service.Test", "Service.Test\Service.Test.csproj", "{0588BF66-3408-4A4B-A1E5-986594F9B4C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Test", "Services.Test\Services.Test.csproj", "{0588BF66-3408-4A4B-A1E5-986594F9B4C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

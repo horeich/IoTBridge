@@ -4,13 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http.Features;
-
 using Horeich.Services.Runtime;
 using Horeich.Services.Exceptions;
 using Horeich.Services.Diagnostics;
 using Horeich.Services.StorageAdapter;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
 
 namespace Horeich.Services.VirtualDevice
 {
@@ -22,12 +19,10 @@ namespace Horeich.Services.VirtualDevice
 
     public class EdgeDeviceManager : IEdgeDeviceManager
     {
-        // TODO: min allowed update interval for devices
         private readonly ILogger _logger;
         private readonly IDataHandler _dataHandler;
-        private readonly IServicesConfig _config;
         private readonly IStorageAdapterClient _storageClient;
-        private CancellationTokenSource _cts;
+        private readonly CancellationTokenSource _cts;
 
         // As it's a single semaphore the implmentation of IDisposable will be foregone
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
@@ -40,61 +35,46 @@ namespace Horeich.Services.VirtualDevice
             IServicesConfig config,
             ILogger logger)
         {
-            _config = config;
-
-            _cts = new CancellationTokenSource(TimeSpan.FromSeconds(_config.IoTHubTimeout));
+            _cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(config.IoTHubTimeout));
             _storageClient = storageClient;
             _dataHandler = dataHandler;
             _logger = logger;
-
-            // var id = BackgroundJob.Schedule("new", (() => OnTimeoutEventAsync()), _sendInterval);
-
-            // RecurringJob.AddOrUpdate("SyncUsers", j => j.Execute(_logger), Cron.Minutely);
-
-            // _backgroundClient = new BackgroundJobClient();
-
-            // RecurringJob.AddOrUpdate("name", () => Console.WriteLine("Hello, {0}!", "world"), Cron.Minutely);
-            // var schedule = new Schedule(
-            // async () =>
-            // {
-            //     using var client = new WebClient();
-            //     var content = await client.DownloadStringTaskAsync("http://example.com");
-            //     Console.WriteLine(content);
-            // },
-            // run => run.Now()
-            // );
-
-            // _edgeDevice.LifespanTimeout += DisposeEdgeDevice;
-            // JobManager.Initialize();
         }
 
-        private async Task<DeviceApiModel> LoadDeviceApiModelAsync(string deviceId)
+        protected async Task<DeviceDataModel> LoadDeviceDataModelAsync(string deviceId)
         {
-            DeviceApiModel model = new DeviceApiModel();
-            model.DeviceId = deviceId;
+            DeviceDataModel deviceDataModel = new()
+            {
+                DeviceId = deviceId
+            };
 
             // Get device info from storage (throws)
-            DevicePropertiesServiceModel deviceModel = await _storageClient.GetDevicePropertiesAsync(deviceId);
-            model.SendInterval = deviceModel.SendInterval;
-            model.HubConnString = deviceModel.HubId + ".azure-devices.net";
-            model.DeviceKey = _dataHandler.GetString(model.DeviceId, string.Empty); // get Device Key from key vault
-            if (model.DeviceKey == String.Empty)
+            DevicePropertiesServiceModel devicePropertiesModel = await _storageClient.GetDevicePropertiesAsync(deviceId);
+
+            // Copy items to device data model
+            deviceDataModel.SendInterval = devicePropertiesModel.SendInterval;
+            deviceDataModel.HubConnString = devicePropertiesModel.HubId + ".azure-devices.net";
+            deviceDataModel.DeviceKey = _dataHandler.GetString(deviceDataModel.DeviceId, string.Empty); // get Device Key from key vault
+            if (deviceDataModel.DeviceKey == String.Empty)
             {
-                throw new InvalidConfigurationException($"Unable to load configuration value for '{deviceModel.HubId}'");
+                throw new NullReferenceException($"Unable to load configuration value for '{devicePropertiesModel.HubId}'"); // TODO: which exception here?
             }
-
-
+  
             // Get mapping from storage (throws)
-            // result = await _storageClient.GetDeviceMappingAsync(deviceModel.Type, deviceModel.Version);
-            // model.Mapping = new List<Tuple<string, Type>>(result.Mapping.Count);
-
-            // // Convert string to type (TODO: error handling?)
-            // for (int i = 0; i < result.Mapping.Count; ++i)
-            // {
-            //     Type varType = TypeFromString(result.Mapping[i][1]);
-            //     model.Mapping.Add(Tuple.Create(result.Mapping[i][0], varType));
-            // }
-            return model;
+            MappingServiceModel mappingModel = await _storageClient.GetDeviceMappingAsync(devicePropertiesModel.Category, devicePropertiesModel.MappingVersion);
+            
+            // Copy mapping to device data model
+            foreach (MappingItem item in mappingModel.Mapping)
+            {
+                TypeItem typeItem = new TypeItem 
+                { 
+                    Id = item.Id, 
+                    Type = Type.GetType(item.TypeString, throwOnError:true)
+                };
+                // throws if conversion fails
+                deviceDataModel.MappingScheme.Add(typeItem);
+            }
+            return deviceDataModel;
         }
 
         private async Task OnDisconnectDeviceAsync(object sender, EventArgs eventArgs)
@@ -108,7 +88,7 @@ namespace Horeich.Services.VirtualDevice
                 EdgeDevice ed = (EdgeDevice)sender;
                 edgeDevice = _devices[ed.Id]; // element must be in list!
 
-                await edgeDevice.SetOnlineStatusPropertyAsync(false, _cts.Token);
+                await edgeDevice.SetOnlineStatusAsync(false, _cts.Token);
             }
             catch (Exception ex)
             {
@@ -128,29 +108,18 @@ namespace Horeich.Services.VirtualDevice
             EdgeDevice edgeDevice = null;
             try
             {
-                
-                if (!_devices.ContainsKey(deviceId))
+                if (!_devices.TryGetValue(deviceId, out edgeDevice))
                 {
                     // Load device model (throws)
-                    // DeviceApiModel model = await LoadDeviceApiModelAsync(deviceId);
-                    DeviceApiModel model = new DeviceApiModel();
-                    model.DeviceId = "LEY3";
-                    model.DeviceKey = "ZqNKe0NRtGREbvjhF+Lbe+6Jq2PDOMZDaM7sEPgX5sc=";
-                    model.HubConnString = "iotc-2fee92c0-e1fe-4a11-b9ac-0e826cac1889.azure-devices.net";
-                    model.SendInterval = 10;
-                    model.Type = "levelsense";
-
+                    DeviceDataModel model = await LoadDeviceDataModelAsync(deviceId);
+                    
                     // Create device and send online status (throws)
                     edgeDevice = new EdgeDevice(model, OnDisconnectDeviceAsync, _logger);
 
                     // (throws)
-                    await edgeDevice.SetOnlineStatusPropertyAsync(true, _cts.Token);
+                    await edgeDevice.SetOnlineStatusAsync(true, _cts.Token);
 
                     _devices.Add(model.DeviceId, edgeDevice);
-                }
-                else
-                {
-                    edgeDevice = _devices[deviceId];
                 }
                 return edgeDevice;
             }
@@ -171,7 +140,7 @@ namespace Horeich.Services.VirtualDevice
                 {
                     edgeDevice = _devices[deviceId];
 
-                    await edgeDevice.SetOnlineStatusPropertyAsync(false, _cts.Token);
+                    await edgeDevice.SetOnlineStatusAsync(false, _cts.Token);
                     
                     // Only dispose if there is no preceeding exception
                     _devices.Remove(edgeDevice.Id);
@@ -190,6 +159,11 @@ namespace Horeich.Services.VirtualDevice
 
         public async Task SendTelemetryAsync(string deviceId, DeviceTelemetry telemetry)
         {
+            if (telemetry == null)
+            {
+                throw new NullReferenceException();
+            }
+
             await _semaphore.WaitAsync();
             try
             {

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) HOREICH GmbH. All rights reserved.
 
 namespace Horeich.Services.Runtime
 {   
@@ -11,6 +11,7 @@ namespace Horeich.Services.Runtime
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
         int IoTHubTimeout { get; }
+        string DbPartitionKey { get; }
         int DeviceUpdateInterval { get; }
 
         // string UserManagementApiUrl { get; }
@@ -48,6 +49,7 @@ namespace Horeich.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
         public int StorageAdapterApiTimeout { get; set; }
         public int IoTHubTimeout { get; set; }
+        public string DbPartitionKey { get; set; }
         public int DeviceUpdateInterval { get; set; }
         // string UserManagementApiUrl { get; }
         // StorageConfig MessagesConfig { get; set; }

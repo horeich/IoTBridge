@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft/ Horeich UG. All rights reserved.
+// Copyright (c) Horeich GmbH. All rights reserved.
 
 using System.Collections.Generic;
 using System.Globalization;

@@ -35,14 +35,14 @@ namespace Horeich.Services.VirtualDevice
         private bool _disposed = false;
         private const int propertyUpdateTime = 10000;
 
-        public static async Task<VirtualDevice> Create(DeviceApiModel model, ILogger logger)
+        public static async Task<VirtualDevice> Create(DeviceDataModel model, ILogger logger)
         {
             VirtualDevice device = new VirtualDevice(model, logger);
             await device.UpdateDevicePropertiesAsync(model.Properties, propertyUpdateTime);
             return device;
         }
 
-        private VirtualDevice(DeviceApiModel model, ILogger logger)
+        private VirtualDevice(DeviceDataModel model, ILogger logger)
         {
             _logger = logger;
             _mapping = model.Mapping;

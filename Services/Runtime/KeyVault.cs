@@ -1,4 +1,4 @@
-// // (c) 2024 HOREICH GmbH
+// Copyright (c) Horeich GmbH, all rights reserved
 
 using Horeich.Services.Diagnostics;
 using Microsoft.Azure.KeyVault;
