@@ -22,7 +22,6 @@ namespace Horeich.Services.VirtualDevice
         public int SendInterval { get; set; }
         public List<Tuple<string, Type>> Mapping { get; set; }
         public List<TypeItem> MappingScheme { get; set; }
-
         public string Type { get; set; }
         public Dictionary<string, string> Properties { get; set; }
     }

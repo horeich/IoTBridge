@@ -1,6 +1,7 @@
 // Copyright (c) HOREICH GmbH. All rights reserved.
 
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,30 +10,35 @@ using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Horeich.Services.Runtime;
 using Horeich.Services.Diagnostics;
+using Horeich.Services.Exceptions;
 
 namespace Horeich.Services.VirtualDevice
 {
     public interface IEdgeDevice
     {
         public string Id { get; }
+        public int TimeoutMs { get; }
+
         Task SetOnlineStatusAsync(bool online, CancellationToken token);
         Task SendDeviceTelemetryAsync(List<string> telemetry, CancellationToken token);
+        void Dispose();
     }
 
-    public class EdgeDevice : IEdgeDevice, IDisposable
+    public sealed class EdgeDevice : IEdgeDevice, IDisposable
     {
         public string Id { get; }
-        public Dictionary<string, string> DeviceInfoProperties { get; set; }
+        public int TimeoutMs { get; }
         private ILogger _logger;
         public delegate void SelfDestroyer(object sender, EventArgs ea);
         private Func<object, EventArgs, Task> _timeoutEvent;
         private readonly List<TypeItem> _mapping;
-        private readonly TimeSpan _sendInterval;
         private readonly string _deviceKey;
+        private readonly Dictionary<string, string> _properties;
         private System.Threading.Timer _connectionTimeout;
         private bool _disposed;
         private DeviceClient _deviceClient;
-        public DeviceUptime _uptime;
+        private DeviceUptime _uptime;
+        private bool _isExecuting;
 
         public EdgeDevice(DeviceDataModel model, Func<object, EventArgs, Task> timeoutEvent, ILogger logger)
         {
@@ -41,13 +47,13 @@ namespace Horeich.Services.VirtualDevice
             _timeoutEvent = timeoutEvent;
             _mapping = model.MappingScheme;
             Id = model.DeviceId;
-            _deviceKey = model.DeviceKey;
-            _sendInterval = TimeSpan.FromSeconds(model.SendInterval + 200);
-            //_properties = model.Properties;
-            DeviceInfoProperties = new Dictionary<string, string>();
+            TimeoutMs = model.SendInterval * 1000;
 
+            _deviceKey = model.DeviceKey;
+            _properties = model.Properties;
             _uptime = new DeviceUptime(); // store device uptime
             _disposed = false;
+            _isExecuting = false;
 
             // Create iot hub device client
             IAuthenticationMethod authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(model.DeviceId, model.DeviceKey);
@@ -56,10 +62,14 @@ namespace Horeich.Services.VirtualDevice
 
         public async Task OnTimeoutEventAsync()
         {
-            Func<object, EventArgs, Task> tempFunc = _timeoutEvent;
-            if (tempFunc != null)
+            if (!_isExecuting)
             {
-                await tempFunc(this, new EventArgs()); // EventArgs currently unused
+                _isExecuting = true;
+                Func<object, EventArgs, Task> tempFunc = _timeoutEvent;
+                if (tempFunc != null)
+                {
+                    await tempFunc(this, new EventArgs()); // EventArgs currently unused
+                }
             }
         }
 
@@ -72,12 +82,12 @@ namespace Horeich.Services.VirtualDevice
                 {
                     await OnTimeoutEventAsync();
                     // Do not forget to dispose timer
-                }, null, _sendInterval.Seconds, System.Threading.Timeout.Infinite);
+                }, null, TimeoutMs, System.Threading.Timeout.Infinite);
                 return true;
             }
             else
             {
-                return _connectionTimeout.Change(_sendInterval.Seconds, System.Threading.Timeout.Infinite);
+                return _connectionTimeout.Change(TimeoutMs, System.Threading.Timeout.Infinite);
             }
         }
 
@@ -102,22 +112,29 @@ namespace Horeich.Services.VirtualDevice
 
         public async Task SetOnlineStatusAsync(bool online, CancellationToken token)
         {
-            if (online)
+            try
             {
-                Dictionary<string, string> properties = DeviceInfoProperties; // add device info properties when connecting
-                properties.Add("Status", "online");
-                await UpdateDevicePropertiesAsync(properties, token);
+                if (online)
+                {
+                    Dictionary<string, string> properties = _properties; // add device info properties when connecting
+                    properties.Add("Status", "online");
+                    await UpdateDevicePropertiesAsync(properties, token);
 
-                // Updating the properties will set the online status to online.
-                // Therefore, we're going to start the disconnect timer immediately.
-                UpdateDisconnectTimerAsync();
+                    // Updating the properties will set the online status to online.
+                    // Therefore, we're going to start the disconnect timer immediately.
+                    UpdateDisconnectTimerAsync();
+                }
+                else // offline
+                {
+                    Dictionary<string, string> properties = new Dictionary<string, string>();
+                    properties.Add("Status", "offline");
+                    await UpdateDevicePropertiesAsync(properties, token);
+                    await _deviceClient.CloseAsync();
+                }
             }
-            else // offline
+            catch (Exception ex)
             {
-                Dictionary<string, string> properties = new Dictionary<string, string>();
-                properties.Add("Status", "offline");
-                await UpdateDevicePropertiesAsync(properties, token);
-                await _deviceClient.CloseAsync();
+                throw new EdgeDeviceException($"Failed update online status ('{Id}')).", ex);
             }
         }
 
@@ -134,11 +151,14 @@ namespace Horeich.Services.VirtualDevice
 
             // Send via device client (throws)
             await SendTelemetryAsync(payload, token);
-
-            _logger.Debug($"Successfully sent data to IoTHub (device: {Id})");
             
             // Update timout if successfully sent message
             UpdateDisconnectTimerAsync();
+        }
+
+        ~EdgeDevice()
+        {
+            Dispose(false);
         }
 
         public void Dispose()
@@ -149,7 +169,6 @@ namespace Horeich.Services.VirtualDevice
 
         private void Dispose(bool disposing)
         {
-            _logger.Debug("Client has been disposed");
             if (!_disposed)
             {
                 if (disposing)

@@ -10,17 +10,17 @@ namespace Horeich.Services.Exceptions
     /// identifier. The client should change the identifier or assume the
     /// resource has already been created.
     /// </summary>
-    public class EdgeDeviceException : Exception
+    public class StorageAdapterException : Exception
     {
-        public EdgeDeviceException() : base()
+        public StorageAdapterException() : base()
         {
         }
 
-        public EdgeDeviceException(string message) : base(message)
+        public StorageAdapterException(string message) : base(message)
         {
         }
 
-        public EdgeDeviceException(string message, Exception innerException)
+        public StorageAdapterException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

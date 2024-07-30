@@ -109,7 +109,7 @@ namespace Horeich.Services.VirtualDevice
             model.DeviceId = deviceId;
 
             // Get device info from storage (throws)
-            DevicePropertiesServiceModel result = await _storageClient.GetAsync(_config.StorageAdapterDeviceCollectionKey, deviceId);
+            DeviceDataSerivceModel result = await _storageClient.GetAsync(_config.StorageAdapterDeviceCollectionKey, deviceId);
             model.SendInterval = result.SendInterval;
             // model.Properties = result.Properties;
 
@@ -156,7 +156,7 @@ namespace Horeich.Services.VirtualDevice
                 IVirtualDevice device = _devices[deviceId];
 
                 // Send telemetry async
-                await device.SendDeviceTelemetryAsync(telemetry.Data, _config.IoTHubTimeout);
+                await device.SendDeviceTelemetryAsync(telemetry.Data, _config.ExternalOperationTimeout);
                 _logger.Debug("Telemetry successfully sent to IoT Central");
             }
             finally

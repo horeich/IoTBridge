@@ -113,7 +113,7 @@ namespace Horeich.IoTBridge.Runtime
                 // DevicePropertiesRebuildTimeout = configData.GetInt(DEVICE_PROPERTIES_REBUILD_TIMEOUT_KEY),
                 StorageAdapterApiUrl = dataHandler.GetString(STORAGE_URL_KEY),
                 StorageAdapterApiTimeout = dataHandler.GetInt(STORAGE_URL_TIMEOUT),
-                IoTHubTimeout = dataHandler.GetInt(IOT_HUB_TIMEOUT),
+                ExternalOperationTimeout = dataHandler.GetInt(IOT_HUB_TIMEOUT),
                 DeviceUpdateInterval = dataHandler.GetInt(DEVICE_UPDATE_INTERVAL),
                 //UserManagementApiUrl = configData.GetString(USER_MANAGEMENT_URL_KEY)
             };

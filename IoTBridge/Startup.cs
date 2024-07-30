@@ -77,10 +77,7 @@ namespace Horeich.IoTBridge
 
         public IContainer ApplicationContainer { set; private get; }
 
-
-        BackgroundJobClient _backgroundJobClient;
-
-        BackgroundJobServer _backgroundServer;
+        // BackgroundJobServer _backgroundServer;
         /// <summary>
         /// This method is called by the runtime. Use this method to add services to the container.
         /// </summary>
@@ -157,8 +154,13 @@ namespace Horeich.IoTBridge
                 c.Resolve<IConfig>().ServicesConfig,
                 c.Resolve<ILogger>())).As<IVirtualDeviceManager>().SingleInstance();
 
+            // Device factory (for unit testing)
+            builder.Register(c => new EdgeDeviceFactory())
+                .As<IEdgeDeviceFactory<IEdgeDevice>>().SingleInstance();
+
             // Virtual device manager
             builder.Register(c => new EdgeDeviceManager(
+                c.Resolve<IEdgeDeviceFactory<IEdgeDevice>>(),
                 c.Resolve<IStorageAdapterClient>(),
                 c.Resolve<IDataHandler>(),
                 c.Resolve<IConfig>().ServicesConfig,
@@ -183,29 +185,29 @@ namespace Horeich.IoTBridge
             //     .UseRecommendedSerializerSettings()
             //     .UseMemoryStorage();
 
-            GlobalConfiguration.Configuration
-                .UseColouredConsoleLogProvider()
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseIgnoredAssemblyVersionTypeResolver()
-                .UseRecommendedSerializerSettings()
-                .UseResultsInContinuations()
-                .UseJobDetailsRenderer(10, dto => throw new InvalidOperationException())
-                .UseJobDetailsRenderer(10, dto => new NonEscapedString("<h4>Hello, world!</h4>"))
-                .UseDefaultCulture(CultureInfo.CurrentCulture)
-                .UseMemoryStorage()
+            // GlobalConfiguration.Configuration
+            //     .UseColouredConsoleLogProvider()
+            //     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            //     .UseSimpleAssemblyNameTypeSerializer()
+            //     .UseIgnoredAssemblyVersionTypeResolver()
+            //     .UseRecommendedSerializerSettings()
+            //     .UseResultsInContinuations()
+            //     .UseJobDetailsRenderer(10, dto => throw new InvalidOperationException())
+            //     .UseJobDetailsRenderer(10, dto => new NonEscapedString("<h4>Hello, world!</h4>"))
+            //     .UseDefaultCulture(CultureInfo.CurrentCulture)
+            //     .UseMemoryStorage()
                 // .UseSqlServerStorage(@"Server=.\;Database=Hangfire.Sample;Trusted_Connection=True;", new SqlServerStorageOptions
                 // {
                 //     EnableHeavyMigrations = true
                 ;
                 
 
-            _backgroundServer = new BackgroundJobServer ();
+            // _backgroundServer = new BackgroundJobServer ();
             // _backgroundJobClient = new BackgroundJobClient();
             // _backgroundJobClient.RetryAttempts = 5;
-            Console.WriteLine("Hello, seconds!");
-            // var job1 = BackgroundJob.Enqueue(() => Console.WriteLine("UrlTestEncoder output"));
-            RecurringJob.AddOrUpdate("seconds", () => Console.WriteLine("Hello, seconds!"), "*/15 * * * * *");
+            // Console.WriteLine("Hello, seconds!");
+            // // var job1 = BackgroundJob.Enqueue(() => Console.WriteLine("UrlTestEncoder output"));
+            // RecurringJob.AddOrUpdate("seconds", () => Console.WriteLine("Hello, seconds!"), "*/15 * * * * *");
 
             // Add the device bridge service
             return new AutofacServiceProvider(ApplicationContainer);

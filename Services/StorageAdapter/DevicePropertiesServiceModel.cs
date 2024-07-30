@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Horeich.Services.StorageAdapter
 {
-    public class DevicePropertiesServiceModel
+    public class DeviceDataSerivceModel
     {
         [JsonProperty(propertyName: "id")]
         public string Id { get; set; }
@@ -35,13 +35,13 @@ namespace Horeich.Services.StorageAdapter
         [JsonProperty("sendInterval")]
         public int SendInterval { get; set; }
 
-        // [JsonProperty("Properties")]
-        // public Dictionary<string, string> Properties { get; set; }
+        [JsonProperty("properties")]
+        public Dictionary<string, string> Properties { get; set; }
 
         [JsonProperty("ETag")]
         public string ETag { get; set; }
 
-        public DevicePropertiesServiceModel()
+        public DeviceDataSerivceModel()
         {
 
         }

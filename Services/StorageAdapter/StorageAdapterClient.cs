@@ -1,102 +1,91 @@
-// Copyright (c) Horeich GmbH, all rights reserved
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Exceptions;
 using Horeich.Services.Http;
 using Horeich.Services.Runtime;
-
 using Newtonsoft.Json;
 
 namespace Horeich.Services.StorageAdapter
 {
     public interface IStorageAdapterClient
     {
-        //Task<ValueListApiModel> GetAllAsync(string collectionId);
-        Task<DevicePropertiesServiceModel> GetAsync(string collectionId, string key);
-
-        Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId);
-
+        Task<DeviceDataSerivceModel> GetAsync(string collectionId, string key);
+        Task<DeviceDataSerivceModel> GetDevicePropertiesAsync(string deviceId);
         Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version);
-
-        // Task<ValueApiModel> CreateAsync(string collectionId, string value);
-        // Task<ValueApiModel> UpsertAsync(string collectionId, string key, string value, string etag);
-        // Task DeleteAsync(string collectionId, string key);
     }
 
     // TODO: handle retriable errors
-    public class StorageAdapterClient : IStorageAdapterClient
+    public sealed class StorageAdapterClient : IStorageAdapterClient
     {
-        // TODO: make it configurable, default to false
-        private const bool ALLOW_INSECURE_SSL_SERVER = true;
-
-        private readonly IHttpClient httpClient;
-        private readonly ILogger log;
-        private readonly string serviceUri;
-        private readonly int timeout;
+        private const bool ALLOW_INSECURE_SSL_SERVER = true; // TODO: make it configurable, default to false
+        private readonly IHttpClient _httpClient;
+        private readonly ILogger _logger;
+        private readonly string _serviceUri;
+        private readonly int _timeout;
 
         public StorageAdapterClient(
             IHttpClient httpClient,
             IServicesConfig config,
             ILogger logger)
         {
-            this.httpClient = httpClient;
-            this.log = logger;
-            this.serviceUri = config.StorageAdapterApiUrl;
-            this.timeout = config.StorageAdapterApiTimeout;
+            _httpClient = httpClient;
+            _logger = logger;
+            _serviceUri = config.StorageAdapterApiUrl;
+            _timeout = config.StorageAdapterApiTimeout;
         }
 
-        public async Task<DevicePropertiesServiceModel> GetAsync(string collectionId, string key)
+        public async Task<DeviceDataSerivceModel> GetAsync(string collectionId, string key)
         {
-            var response = await this.httpClient.GetAsync(
-                this.PrepareRequest($"collections/{collectionId}/values/{key}"));
+            var response = await this._httpClient.GetAsync(
+                PrepareRequest($"collections/{collectionId}/values/{key}"));
 
-            this.ThrowIfError(response, collectionId, key);
+            ThrowIfError(response, collectionId, key);
 
             // Deserialize Http message into value API model (TODO: Throws JsonSerializationException)
-            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
+            return JsonConvert.DeserializeObject<DeviceDataSerivceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
-        public async Task<DevicePropertiesServiceModel> GetDevicePropertiesAsync(string deviceId)
+        public async Task<DeviceDataSerivceModel> GetDevicePropertiesAsync(string deviceId)
         {
-            var response = await this.httpClient.GetAsync(
-                this.PrepareRequest($"devices/type/device/id/{deviceId}")); // v1 is added
+            var response = await this._httpClient.GetAsync(
+                PrepareRequest($"devices/type/device/id/{deviceId}")); // v1 is added
 
-            this.ThrowIfError(response, "devices", deviceId);
+            ThrowIfError(response, "devices", deviceId);
 
             // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
-            return JsonConvert.DeserializeObject<DevicePropertiesServiceModel>(response.Content,
+            return JsonConvert.DeserializeObject<DeviceDataSerivceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
         public async Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version)
         {
             // TODO: HTTP timeout
-            var response = await this.httpClient.GetAsync(
-                this.PrepareRequest($"mappings/type/{deviceType}/version/{version}")); // v1 is added
+            var response = await _httpClient.GetAsync(
+                PrepareRequest($"mappings/type/{deviceType}/version/{version}")); // v1 is added
 
-            this.ThrowIfError(response, "mappings", String.Format($"{deviceType}.{version}"));
+            ThrowIfError(response, "mappings", String.Format($"{deviceType}.{version}"));
 
             // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
             return JsonConvert.DeserializeObject<MappingServiceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
-        private HttpRequest PrepareRequest(string path, DevicePropertiesServiceModel content = null)
+        private HttpRequest PrepareRequest(string path, DeviceDataSerivceModel content = null)
         {
             var request = new HttpRequest();
             request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
             request.AddHeader(HttpRequestHeader.CacheControl.ToString(), "no-cache");
             request.AddHeader(HttpRequestHeader.UserAgent.ToString(), "Device Simulation " + this.GetType().FullName);
-            request.SetUriFromString($"{this.serviceUri}/{path}");
+            request.SetUriFromString($"{this._serviceUri}/{path}");
             request.Options.EnsureSuccess = false;
-            request.Options.Timeout = this.timeout;
-            if (this.serviceUri.ToLowerInvariant().StartsWith("https:"))
+            request.Options.Timeout = this._timeout;
+            if (this._serviceUri.ToLowerInvariant().StartsWith("https:"))
             {
                 request.Options.AllowInsecureSSLServer = ALLOW_INSECURE_SSL_SERVER;
             }
@@ -109,17 +98,17 @@ namespace Horeich.Services.StorageAdapter
             return request;
         }
 
-        private void ThrowIfError(IHttpResponse response, string collectionId, string key)
+        private void ThrowIfError(IHttpResponse response, string containerId, string key)
         {
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                throw new ResourceNotFoundException($"Resource {collectionId}/{key} not found.");
+                throw new ResourceNotFoundException($"Resource {containerId}/{key} not found.");
             }
 
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
                 throw new ConflictingResourceException(
-                    $"Resource {collectionId}/{key} out of date. Reload the resource and retry.");
+                    $"Resource {containerId}/{key} out of date. Reload the resource and retry.");
             }
 
             if (response.IsError)

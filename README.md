@@ -35,3 +35,8 @@ https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/keyvault/Azure.Security
 * West Europe
 * Naming convention horeich-{number}
 * Create virtual network horeich-{number}-vnet
+
+
+## Check build in types
+These types are supported for telemetry data
+https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types

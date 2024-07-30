@@ -1,4 +1,4 @@
-// Copyright (c) Horeich GmbH, all rights reserved
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 using System.Collections.Generic;
@@ -21,24 +21,29 @@ namespace Horeich.Services.VirtualDevice
     {
         private readonly ILogger _logger;
         private readonly IDataHandler _dataHandler;
+        private readonly IEdgeDeviceFactory<IEdgeDevice> _edgeDeviceFactory;
         private readonly IStorageAdapterClient _storageClient;
-        private readonly CancellationTokenSource _cts;
+        private readonly TimeSpan _timeout;
 
         // As it's a single semaphore the implmentation of IDisposable will be foregone
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-
-        private Dictionary<string, EdgeDevice> _devices = new Dictionary<string, EdgeDevice>(); // list of all running virtual sensors
+        private SemaphoreSlim _semaphore;
+        private Dictionary<string, IEdgeDevice> _devices = []; // list of all running virtual sensors
 
         public EdgeDeviceManager(
+            IEdgeDeviceFactory<IEdgeDevice> edgeDeviceFactory,
             IStorageAdapterClient storageClient,
             IDataHandler dataHandler,
             IServicesConfig config,
             ILogger logger)
         {
-            _cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(config.IoTHubTimeout));
-            _storageClient = storageClient;
             _dataHandler = dataHandler;
             _logger = logger;
+            
+            _edgeDeviceFactory = edgeDeviceFactory;
+            _storageClient = storageClient;
+            _timeout = TimeSpan.FromMilliseconds((double)config.ExternalOperationTimeout);
+
+            _semaphore = new SemaphoreSlim(1, 1);
         }
 
         protected async Task<DeviceDataModel> LoadDeviceDataModelAsync(string deviceId)
@@ -48,22 +53,24 @@ namespace Horeich.Services.VirtualDevice
                 DeviceId = deviceId
             };
 
-            // Get device info from storage (throws)
-            DevicePropertiesServiceModel devicePropertiesModel = await _storageClient.GetDevicePropertiesAsync(deviceId);
+            // Get device info from storage (throws), HTTP timeout is set to 30s
+            DeviceDataSerivceModel devicePropertiesModel = await _storageClient.GetDevicePropertiesAsync(deviceId);
 
             // Copy items to device data model
             deviceDataModel.SendInterval = devicePropertiesModel.SendInterval;
             deviceDataModel.HubConnString = devicePropertiesModel.HubId + ".azure-devices.net";
+            deviceDataModel.Properties = devicePropertiesModel.Properties;
             deviceDataModel.DeviceKey = _dataHandler.GetString(deviceDataModel.DeviceId, string.Empty); // get Device Key from key vault
             if (deviceDataModel.DeviceKey == String.Empty)
             {
                 throw new NullReferenceException($"Unable to load configuration value for '{devicePropertiesModel.HubId}'"); // TODO: which exception here?
             }
-  
+    
             // Get mapping from storage (throws)
             MappingServiceModel mappingModel = await _storageClient.GetDeviceMappingAsync(devicePropertiesModel.Category, devicePropertiesModel.MappingVersion);
             
             // Copy mapping to device data model
+            deviceDataModel.MappingScheme = [];
             foreach (MappingItem item in mappingModel.Mapping)
             {
                 TypeItem typeItem = new TypeItem 
@@ -82,30 +89,34 @@ namespace Horeich.Services.VirtualDevice
             // This is executed in EdgeDevice's context
             // Currently, we do not retry updating offline properties. This should be changed in future releases
             await _semaphore.WaitAsync();
-            EdgeDevice edgeDevice = null;
+            IEdgeDevice edgeDevice = null;
             try
             {
-                EdgeDevice ed = (EdgeDevice)sender;
+                IEdgeDevice ed = (IEdgeDevice)sender;
                 edgeDevice = _devices[ed.Id]; // element must be in list!
+                _devices.Remove(edgeDevice.Id);
 
-                await edgeDevice.SetOnlineStatusAsync(false, _cts.Token);
+                using CancellationTokenSource cts = new(_timeout);
+                await edgeDevice.SetOnlineStatusAsync(false, cts.Token);
+
+                _logger.Info($"Successfully disconnected device '{edgeDevice.Id}' due to timeout ({edgeDevice.TimeoutMs/1000}s)");
             }
             catch (Exception ex)
             {
-                throw new EdgeDeviceException($"Failed to update device offline status on timeout ({edgeDevice?.Id})", ex); 
+                _logger.Error($"Failed to disconnect device '{edgeDevice?.Id}' on timeout, Exception: {ex}");
             }
             finally
             {
                 // The edge device will be disposed in any case
-                _devices.Remove(edgeDevice.Id);
+                // However if called twice, the device might already been removed from the 
                 edgeDevice?.Dispose();
                 _semaphore.Release();
             }
         }
 
-        private async Task<EdgeDevice> ConnectDeviceAsync(string deviceId)
+        private async Task<IEdgeDevice> ConnectDeviceAsync(string deviceId)
         {
-            EdgeDevice edgeDevice = null;
+            IEdgeDevice edgeDevice = null;
             try
             {
                 if (!_devices.TryGetValue(deviceId, out edgeDevice))
@@ -114,42 +125,49 @@ namespace Horeich.Services.VirtualDevice
                     DeviceDataModel model = await LoadDeviceDataModelAsync(deviceId);
                     
                     // Create device and send online status (throws)
-                    edgeDevice = new EdgeDevice(model, OnDisconnectDeviceAsync, _logger);
+                    edgeDevice = _edgeDeviceFactory.Create(model, OnDisconnectDeviceAsync, _logger);
 
                     // (throws)
-                    await edgeDevice.SetOnlineStatusAsync(true, _cts.Token);
+                    using CancellationTokenSource cts = new(_timeout);
+                    await edgeDevice.SetOnlineStatusAsync(true, cts.Token);
 
+                    // Add device to device list
                     _devices.Add(model.DeviceId, edgeDevice);
+
+                    // Log successfull device creation
+                    _logger.Info($"Successfully connected device '{edgeDevice.Id}' (# of active devices: {_devices.Count})");
                 }
                 return edgeDevice;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 edgeDevice?.Dispose(); // In case of an exception clear all reasources
-                throw new EdgeDeviceException($"Failed load device model or update device online status ({deviceId})", ex);
+                throw;
             }
         }
 
         public async Task DisconnectDeviceAsync(string deviceId)
         {
             await _semaphore.WaitAsync();
-            EdgeDevice edgeDevice = null;
+            IEdgeDevice edgeDevice = null;
             try
             {
                 if (!_devices.ContainsKey(deviceId))
                 {
                     edgeDevice = _devices[deviceId];
 
-                    await edgeDevice.SetOnlineStatusAsync(false, _cts.Token);
+                    // Set disconnect state
+                    using CancellationTokenSource cts = new(_timeout);
+                    await edgeDevice.SetOnlineStatusAsync(false, cts.Token);
                     
                     // Only dispose if there is no preceeding exception
                     _devices.Remove(edgeDevice.Id);
                     edgeDevice?.Dispose();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new EdgeDeviceException($"Failed to update device offline status ({edgeDevice?.Id})", ex); 
+                throw;
             }
             finally
             {
@@ -159,26 +177,28 @@ namespace Horeich.Services.VirtualDevice
 
         public async Task SendTelemetryAsync(string deviceId, DeviceTelemetry telemetry)
         {
-            if (telemetry == null)
+            if (telemetry.Data == null)
             {
-                throw new NullReferenceException();
+                throw new NullReferenceException($"Empty telemetry for device '{deviceId}");
             }
-
+            
             await _semaphore.WaitAsync();
             try
             {
                 // Setup device connection on first time
-                EdgeDevice edgeDevice = await ConnectDeviceAsync(deviceId);
+                IEdgeDevice edgeDevice = await ConnectDeviceAsync(deviceId);
 
                 // Send telemetry to IoT Hub
-                await edgeDevice.SendDeviceTelemetryAsync(telemetry.Data, _cts.Token);
+                using CancellationTokenSource cts = new(_timeout);
+                await edgeDevice.SendDeviceTelemetryAsync(telemetry.Data, cts.Token);
 
                 // Debug message
-                _logger.Debug(String.Format($"Telemetry of device {deviceId} successfully sent to IoT Hub"));
+                _logger.Info(String.Format($"Telemetry of device '{deviceId}' successfully sent to IoT Hub"));
             }
             catch (Exception ex)
             {
                 _logger.Error(String.Format($"Sending telemetry to IoT Hub failed {ex}"));
+                throw;
             }
             finally
             {

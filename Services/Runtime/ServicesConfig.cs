@@ -10,7 +10,7 @@ namespace Horeich.Services.Runtime
         string StorageAdapterMappingCollection { get; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
-        int IoTHubTimeout { get; }
+        int ExternalOperationTimeout { get; }
         string DbPartitionKey { get; }
         int DeviceUpdateInterval { get; }
 
@@ -48,7 +48,7 @@ namespace Horeich.Services.Runtime
         public string StorageAdapterMappingCollection { get; set; }
         public string StorageAdapterApiUrl { get; set; }
         public int StorageAdapterApiTimeout { get; set; }
-        public int IoTHubTimeout { get; set; }
+        public int ExternalOperationTimeout { get; set; }
         public string DbPartitionKey { get; set; }
         public int DeviceUpdateInterval { get; set; }
         // string UserManagementApiUrl { get; }
