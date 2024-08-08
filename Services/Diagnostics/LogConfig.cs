@@ -1,4 +1,4 @@
-// Copyright (c) HOREICH. All rights reserved.
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 namespace Horeich.Services.Diagnostics
 {
@@ -12,6 +12,7 @@ namespace Horeich.Services.Diagnostics
         Critical = 60,
         None = 80,
     }
+    
     public interface ILogConfig
     {  
         LogLevel LogLevel { get; }

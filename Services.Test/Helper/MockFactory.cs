@@ -1,7 +1,7 @@
 ﻿// Copyright (c) HOREICH GmbH. All rights reserved.
 
 using Horeich.Services.Diagnostics;
-using Horeich.Services.VirtualDevice;
+using Horeich.Services.EdgeDevice;
 using Moq;
 
 namespace Services.Test.helpers

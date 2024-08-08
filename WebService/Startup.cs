@@ -1,4 +1,4 @@
-// Copyright (c) Horeich GmbH. All rights reserved
+// Copyright (c) HOREICH GmbH. All rights reserved.
 
 using System;
 using Microsoft.AspNetCore.Builder;
@@ -6,62 +6,19 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-// using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
-
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Runtime;
-using Horeich.Services.VirtualDevice;
+using Horeich.Services.EdgeDevice;
 using Horeich.IoTBridge.Runtime;
 using Horeich.IoTBridge.Middleware;
 using Horeich.Services.StorageAdapter;
 using Horeich.Services.Http;
-// using Quartz.Extension.DependencyInjection;
-// using Quartz;
-using Hangfire;
-using Hangfire.MemoryStorage;
-using Microsoft.Extensions.WebEncoders.Testing;
-using System.Globalization;
-using Hangfire.Dashboard;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Horeich.IoTBridge
 {
-    public class ContainerJobActivator : JobActivator
-    {
-        private IContainer _container;
-
-        public ContainerJobActivator(IContainer container)
-        {
-            _container = container;
-        }
-
-        public override object ActivateJob(Type type)
-        {
-            return _container.Resolve(type);
-        }
-    }
-
-    public class CurrencyRatesJob
-    {
-        private readonly ILogger _logger;
-
-        public CurrencyRatesJob(ILogger logger)
-        {
-            _logger = logger;
-        }
-
-        public void Execute()
-        {
-
-            _logger.Debug("Hello, world!");
-
-        }
-    }
-
     public class Startup
     {
         public Startup(IWebHostEnvironment env)
@@ -85,29 +42,12 @@ namespace Horeich.IoTBridge
         /// <returns></returns>
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-
-            // services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
-
-
             // services.AddCors();
             // services.AddMvc().AddControllersAsServices();
             // services.AddControllers();
+
             // Add controller as services so they'll be resolved
             services.AddMvc().AddControllersAsServices(); // use routing
-
-            // services.AddHangfire(c => c
-            //     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            //     .UseSimpleAssemblyNameTypeSerializer()
-            //     .UseRecommendedSerializerSettings()
-            //     .UseMemoryStorage()
-            // );
-
-            // services.AddHostedService<RecurringJobsService>();
-            // services.AddHangfireServer(options =>
-            // {
-            //     options.StopTimeout = TimeSpan.FromSeconds(15);
-            //     options.ShutdownTimeout = TimeSpan.FromSeconds(30);
-            // });
 
             // New container
             ContainerBuilder builder = new ContainerBuilder();
@@ -116,7 +56,6 @@ namespace Horeich.IoTBridge
             builder.Populate(services);
 
             // Register device bridge controller
-            builder.RegisterType<Controllers.DeviceBridgeController>().PropertiesAutowired();
             builder.RegisterType<Controllers.EdgeDeviceController>().PropertiesAutowired();
 
             // Register logger first which is injected in all other instances
@@ -147,13 +86,6 @@ namespace Horeich.IoTBridge
                 c.Resolve<IConfig>().ServicesConfig,
                 c.Resolve<ILogger>())).As<IStorageAdapterClient>().SingleInstance();
 
-            // Virtual device manager
-            builder.Register(c => new VirtualDeviceManager(
-                c.Resolve<IStorageAdapterClient>(),
-                c.Resolve<IDataHandler>(),
-                c.Resolve<IConfig>().ServicesConfig,
-                c.Resolve<ILogger>())).As<IVirtualDeviceManager>().SingleInstance();
-
             // Device factory (for unit testing)
             builder.Register(c => new EdgeDeviceFactory())
                 .As<IEdgeDeviceFactory<IEdgeDevice>>().SingleInstance();
@@ -174,40 +106,7 @@ namespace Horeich.IoTBridge
 
             // Set logging config
             logger.LogLevel = config.LogConfig.LogLevel;
-            logger.ApplicationName = config.ServicesConfig.ApplicationNameKey;
-
-
-            // GlobalConfiguration.Configuration
-            //     // .UseActivator(new ContainerJobActivator(ApplicationContainer))
-            //     // .UseAutofacActivator(ApplicationContainer)
-            //     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            //     .UseSimpleAssemblyNameTypeSerializer()
-            //     .UseRecommendedSerializerSettings()
-            //     .UseMemoryStorage();
-
-            // GlobalConfiguration.Configuration
-            //     .UseColouredConsoleLogProvider()
-            //     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            //     .UseSimpleAssemblyNameTypeSerializer()
-            //     .UseIgnoredAssemblyVersionTypeResolver()
-            //     .UseRecommendedSerializerSettings()
-            //     .UseResultsInContinuations()
-            //     .UseJobDetailsRenderer(10, dto => throw new InvalidOperationException())
-            //     .UseJobDetailsRenderer(10, dto => new NonEscapedString("<h4>Hello, world!</h4>"))
-            //     .UseDefaultCulture(CultureInfo.CurrentCulture)
-            //     .UseMemoryStorage()
-                // .UseSqlServerStorage(@"Server=.\;Database=Hangfire.Sample;Trusted_Connection=True;", new SqlServerStorageOptions
-                // {
-                //     EnableHeavyMigrations = true
-                ;
-                
-
-            // _backgroundServer = new BackgroundJobServer ();
-            // _backgroundJobClient = new BackgroundJobClient();
-            // _backgroundJobClient.RetryAttempts = 5;
-            // Console.WriteLine("Hello, seconds!");
-            // // var job1 = BackgroundJob.Enqueue(() => Console.WriteLine("UrlTestEncoder output"));
-            // RecurringJob.AddOrUpdate("seconds", () => Console.WriteLine("Hello, seconds!"), "*/15 * * * * *");
+            logger.ApplicationName = config.ServicesConfig.ApplicationName;
 
             // Add the device bridge service
             return new AutofacServiceProvider(ApplicationContainer);
@@ -218,14 +117,12 @@ namespace Horeich.IoTBridge
         /// </summary>
         /// <param name="app"></param>
         /// <param name="env"></param>
-        /// <param name="loggerFactory"></param>
         public void Configure(
             IApplicationBuilder app,
-            IWebHostEnvironment env)//,
-                                    // ILoggerFactory loggerFactory)
+            IWebHostEnvironment env)
         {
             // Show exception page during development
-            if (env.IsDevelopment())
+            if (env.IsDevelopment()) // TODO:!!!!
             {
                 // Note: Initialize after UseDeveloperExceptionPage
                 app.UseDeveloperExceptionPage();
@@ -238,9 +135,7 @@ namespace Horeich.IoTBridge
                 //app.UseExceptionHandler("/Error");
             }
 
-
             //app.UseHttpsRedirection();
-
             app.UseRouting();
             app.UseAuthorization();
             //app.UseMvc();

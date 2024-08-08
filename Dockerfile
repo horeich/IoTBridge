@@ -1,6 +1,6 @@
 
 # Set base image and give the build stage a name
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS base
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base
 
 # Switch container working directory
 WORKDIR /app
@@ -9,7 +9,7 @@ WORKDIR /app
 EXPOSE 9021/tcp
 
 # Set base image and give the build stage a name
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 # COPY FILES AND RESTORE PROJECT DEPENDENCIES
 # Switch container working directory
@@ -20,23 +20,23 @@ WORKDIR /src
 COPY . ./
 
 # Copy project file ending in .csproj file
-# IoTBridge/ is relative directory; /IoTBridge/ is absolut directory: here /src/IoTBridge
-# COPY ["IoTBridge/IoTBridge.csproj", "IoTBridge/"] 
+# WebService/ is relative directory; /WebService/ is absolut directory: here /src/WebService
+# COPY ["WebService/WebService.csproj", "WebService/"] 
 
 # Ensure we install all specified dependencies
-RUN dotnet restore "IoTBridge/src/IoTBridge.csproj"
+RUN dotnet restore "WebService/WebService.csproj"
 
 # Switch to .csproj folder
-WORKDIR /src/IoTBridge/src
+WORKDIR /src/WebService
 
 # Build app into app folder
-RUN dotnet build "IoTBridge.csproj" -c Release -o /app/build
+RUN dotnet build "WebService.csproj" -c Release -o /app/build
 
 # Initialize new build stage, setting base image
 FROM build AS publish
 
 # Execute command in a new layer on top of the current image and commit
-RUN dotnet publish "IoTBridge.csproj" -c Release -o /app/publish
+RUN dotnet publish "WebService.csproj" -c Release -o /app/publish
 
 FROM base AS final
 
@@ -44,4 +44,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-ENTRYPOINT ["dotnet", "IoTBridge.dll"]
+ENTRYPOINT ["dotnet", "WebService.dll"]

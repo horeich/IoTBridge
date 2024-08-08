@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IoTBridge", "IoTBridge", "{2B944E92-9045-4CC4-96F3-6B0D6B1DC0DE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebService", "WebService", "{2B944E92-9045-4CC4-96F3-6B0D6B1DC0DE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTBridge", "IoTBridge\IoTBridge.csproj", "{6A81ACFA-F2D5-4B27-A465-7B368A61FD03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebService", "WebService\WebService.csproj", "{6A81ACFA-F2D5-4B27-A465-7B368A61FD03}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{C74CE75D-CFF0-4BE2-B72B-6BE2BB9FAE74}"
 EndProject

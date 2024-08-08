@@ -1,12 +1,11 @@
 // Copyright (c) HOREICH GmbH. All rights reserved.
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Horeich.Services.Diagnostics;
-using Horeich.Services.Runtime;
+using Horeich.Services.Models;
 
-namespace Horeich.Services.VirtualDevice
+namespace Horeich.Services.EdgeDevice
 {
     public interface IEdgeDeviceFactory<out T>
     {

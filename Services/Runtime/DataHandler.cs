@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 using System.Collections;
@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Exceptions;
-
-// using Microsoft.Azure.IoTSolutions.IotHubManager.Services.Exceptions;
 using Microsoft.Extensions.Configuration;
 
 namespace Horeich.Services.Runtime

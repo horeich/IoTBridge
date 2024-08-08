@@ -40,3 +40,9 @@ https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/keyvault/Azure.Security
 ## Check build in types
 These types are supported for telemetry data
 https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types
+
+
+
+## Coniguration
+ASPNETCORE_ENVIRONMENT
+preserve newest etc pp

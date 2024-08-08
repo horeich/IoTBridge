@@ -2,7 +2,7 @@
 
 using Horeich.Services.Runtime;
 using Horeich.Services.StorageAdapter;
-using Horeich.Services.VirtualDevice;
+using Horeich.Services.EdgeDevice;
 using Horeich.Services.Diagnostics;
 using Microsoft.Identity.Client.Extensions.Msal;
 using Moq;

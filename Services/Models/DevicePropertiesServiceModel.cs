@@ -1,10 +1,10 @@
-// Copyright (c) Horeich GmbH. All rights reserved.
+// Copyright (c) HOREICH GmbH. All rights reserved.
 
 using System.Collections.Generic;
 using System.Globalization;
 using Newtonsoft.Json;
 
-namespace Horeich.Services.StorageAdapter
+namespace Horeich.Services.Models
 {
     public class DeviceDataSerivceModel
     {
@@ -13,27 +13,21 @@ namespace Horeich.Services.StorageAdapter
 
         [JsonProperty("type")]
         public string Type { get; set; }
+
         [JsonProperty("category")]
         public string Category { get; set; }
-
-        [JsonProperty("hubId")]
-        public string HubId { get; set; }
-
-        [JsonProperty("data")]
-        public string Data { get; set; }
 
         [JsonProperty("mappingVersion")]
         public string MappingVersion { get; set; }
 
+        [JsonProperty("hubId")]
+        public string HubId { get; set; }
+
         [JsonProperty("mapping")]
         public List<List<string>> Mapping { get; set; }
 
-        // public List<List<string>> Mapping { get; set; }
-        [JsonProperty("version")]
-        public string Version { get; set; }
-
-        [JsonProperty("sendInterval")]
-        public int SendInterval { get; set; }
+        [JsonProperty("timeoutInterval")]
+        public int TimeoutInterval { get; set; }
 
         [JsonProperty("properties")]
         public Dictionary<string, string> Properties { get; set; }

@@ -8,17 +8,16 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
-using Horeich.Services.Runtime;
+using Horeich.Services.Models;
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Exceptions;
 
-namespace Horeich.Services.VirtualDevice
+namespace Horeich.Services.EdgeDevice
 {
     public interface IEdgeDevice
     {
         public string Id { get; }
         public int TimeoutMs { get; }
-
         Task SetOnlineStatusAsync(bool online, CancellationToken token);
         Task SendDeviceTelemetryAsync(List<string> telemetry, CancellationToken token);
         void Dispose();
@@ -37,7 +36,6 @@ namespace Horeich.Services.VirtualDevice
         private System.Threading.Timer _connectionTimeout;
         private bool _disposed;
         private DeviceClient _deviceClient;
-        private DeviceUptime _uptime;
         private bool _isExecuting;
 
         public EdgeDevice(DeviceDataModel model, Func<object, EventArgs, Task> timeoutEvent, ILogger logger)
@@ -47,22 +45,23 @@ namespace Horeich.Services.VirtualDevice
             _timeoutEvent = timeoutEvent;
             _mapping = model.MappingScheme;
             Id = model.DeviceId;
-            TimeoutMs = model.SendInterval * 1000;
+            TimeoutMs = model.TimeoutInterval * 1000; // convert to milliseconds
 
             _deviceKey = model.DeviceKey;
             _properties = model.Properties;
-            _uptime = new DeviceUptime(); // store device uptime
             _disposed = false;
             _isExecuting = false;
 
             // Create iot hub device client
             IAuthenticationMethod authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(model.DeviceId, model.DeviceKey);
-            _deviceClient = DeviceClient.Create(model.HubConnString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Amqp);
+            _deviceClient = DeviceClient.Create(model.HubConnString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Mqtt);
+
+            // _deviceClient.SetRetryPolicy() // set custom retry policy
         }
 
         public async Task OnTimeoutEventAsync()
         {
-            if (!_isExecuting)
+            if (!_isExecuting) // never execute more than once
             {
                 _isExecuting = true;
                 Func<object, EventArgs, Task> tempFunc = _timeoutEvent;
@@ -75,18 +74,20 @@ namespace Horeich.Services.VirtualDevice
 
         private bool UpdateDisconnectTimerAsync()
         {
-            // Start disconnect timer
             if (_connectionTimeout == null)
             {
+                // Start disconnect timer
                 _connectionTimeout = new System.Threading.Timer(async (obj) =>
                 {
+                    // This timer holds reference to this instance, so it must be disposed
                     await OnTimeoutEventAsync();
-                    // Do not forget to dispose timer
+                    // Do not forget to dispose timer (call dispose)
                 }, null, TimeoutMs, System.Threading.Timeout.Infinite);
                 return true;
             }
             else
             {
+                // Update disconnect timer
                 return _connectionTimeout.Change(TimeoutMs, System.Threading.Timeout.Infinite);
             }
         }
@@ -142,10 +143,25 @@ namespace Horeich.Services.VirtualDevice
         {
             // Assign value to variable names
             Dictionary<string, object> serializeableData = new Dictionary<string, object>();
+
+            // Throw exception if mapping does not fit the
+            if (telemetry.Count > _mapping.Count)
+            {
+                throw new MappingMismatchException($"Telemetry (Count: {telemetry.Count}) and Mapping (Count: {_mapping.Count}) do not fit.");
+            }
+
+            // Map telemetry according to given scheme
             for (int i = 0; i < telemetry.Count; ++i)
             {
                 // Convert data according to mapping (throws)
-                serializeableData.Add(_mapping[i].Id, Convert.ChangeType(telemetry[i], _mapping[i].Type));
+                try
+                {
+                    serializeableData.Add(_mapping[i].Id, Convert.ChangeType(telemetry[i], _mapping[i].Type));
+                }
+                catch (FormatException ex)
+                {
+                    throw new MappingMismatchException($"Telmetry value '{telemetry[i]}' cannot be mapped to given data type '{_mapping[i].Type}'.", ex);
+                }
             }
             var payload = JsonConvert.SerializeObject(serializeableData, Formatting.Indented);
 
@@ -175,6 +191,7 @@ namespace Horeich.Services.VirtualDevice
                 {
                     _deviceClient.Dispose();
                     _connectionTimeout?.Dispose();
+                    _timeoutEvent = null;
                 }
                 _disposed = true;
             }

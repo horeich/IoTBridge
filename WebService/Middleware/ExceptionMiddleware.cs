@@ -1,4 +1,4 @@
-// Copyright (c) Horeich UG (andreas.reichle@horeich.de)
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 using System.Threading.Tasks;
@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Net;
 using Newtonsoft.Json;
-
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Exceptions;
 
@@ -53,18 +52,13 @@ namespace Horeich.IoTBridge.Middleware
         {
             var code = HttpStatusCode.InternalServerError; // 500 if unexpected
 
-            // Bad request exceptions
-            if (e is DeviceIdentityException) // wrong identity sent
-            {
-                _logger.Error(string.Format("Invalid device identity string: {0}", e.Message));
-                code = HttpStatusCode.BadRequest;
-            }    
-            else if (e is ArgumentOutOfRangeException) // empty identity sent
+            // Bad request exceptions  
+            if (e is ArgumentOutOfRangeException) // empty identity sent
             {
                 _logger.Error(string.Format("Invalid device identity string: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;
             }
-             else if (e is NullReferenceException) // variable is null
+            else if (e is NullReferenceException) // variable is null
             {
                 _logger.Error(string.Format("Invalid data format: {0}", e.Message));
                 code = HttpStatusCode.BadRequest;

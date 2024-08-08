@@ -1,4 +1,4 @@
-// Copyright (c) HOREICH. All rights reserved.
+// Copyright (c) HOREICH GmbH, All rights reserved
 
 using System;
 using System.Threading;
@@ -31,7 +31,7 @@ namespace Horeich.Services.Diagnostics
 
     public class Logger : ILogger
     { 
-        private readonly NLog.Logger logger;
+        private readonly NLog.Logger _logger;
         private string _processId;
         private readonly string _name;
         public LogLevel LogLevel { get; set; }
@@ -44,8 +44,8 @@ namespace Horeich.Services.Diagnostics
             this.LogLevel = logLevel;
             ApplicationName = "";
 
-            logger = NLogBuilder
-                .ConfigureNLog(GetLogConfigFileName()) // give NLog the right file to load for the environment
+            _logger = NLog.LogManager.Setup()
+                .LoadConfigurationFromFile(GetLogConfigFileName(), false) // give NLog the right file to load for the environment
                 .GetCurrentClassLogger();
 
             ReadOnlyCollection<NLog.Targets.Target> targets = NLog.LogManager.Configuration.AllTargets;
@@ -53,17 +53,18 @@ namespace Horeich.Services.Diagnostics
             {
                 Info($"Logging to {target}");
             }
-            logger.Factory.Flush(TimeSpan.FromSeconds(1000));
+            _logger.Factory.Flush(TimeSpan.FromSeconds(1000));
         }
 
         public static string GetLogConfigFileName()
         {
+            // Check the environment and load the file accordingly
             string env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             
             // Set default
             if (String.IsNullOrEmpty(env))
             {
-                return "nlog.debug.config";
+                return "nlog.development.config";
             }
             if (env.Equals("Release", System.StringComparison.InvariantCultureIgnoreCase))
             {
@@ -75,7 +76,7 @@ namespace Horeich.Services.Diagnostics
             }
             else // fall back to debug settings by default
             {
-                return "nlog.debug.config";
+                return "nlog.development.config";
             }
         }
 
@@ -118,7 +119,7 @@ namespace Horeich.Services.Diagnostics
                 logEventInfo.Exception = exception;
             }
 
-            logger
+            _logger
                 // These properties are predefined in nlog.config
                 // .WithProperty("UserId", userContext.Id)
                 // .WithProperty("Time", DateTime.Now)

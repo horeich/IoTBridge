@@ -8,8 +8,9 @@ using Horeich.Services.Runtime;
 using Horeich.Services.Exceptions;
 using Horeich.Services.Diagnostics;
 using Horeich.Services.StorageAdapter;
+using Horeich.Services.Models;
 
-namespace Horeich.Services.VirtualDevice
+namespace Horeich.Services.EdgeDevice
 {
     public interface IEdgeDeviceManager
     {
@@ -41,7 +42,7 @@ namespace Horeich.Services.VirtualDevice
             
             _edgeDeviceFactory = edgeDeviceFactory;
             _storageClient = storageClient;
-            _timeout = TimeSpan.FromMilliseconds((double)config.ExternalOperationTimeout);
+            _timeout = TimeSpan.FromMilliseconds((double)config.DeviceClientTimeout);
 
             _semaphore = new SemaphoreSlim(1, 1);
         }
@@ -57,7 +58,7 @@ namespace Horeich.Services.VirtualDevice
             DeviceDataSerivceModel devicePropertiesModel = await _storageClient.GetDevicePropertiesAsync(deviceId);
 
             // Copy items to device data model
-            deviceDataModel.SendInterval = devicePropertiesModel.SendInterval;
+            deviceDataModel.TimeoutInterval = devicePropertiesModel.TimeoutInterval;
             deviceDataModel.HubConnString = devicePropertiesModel.HubId + ".azure-devices.net";
             deviceDataModel.Properties = devicePropertiesModel.Properties;
             deviceDataModel.DeviceKey = _dataHandler.GetString(deviceDataModel.DeviceId, string.Empty); // get Device Key from key vault
@@ -197,7 +198,7 @@ namespace Horeich.Services.VirtualDevice
             }
             catch (Exception ex)
             {
-                _logger.Error(String.Format($"Sending telemetry to IoT Hub failed {ex}"));
+                _logger.Error(String.Format($"SendTelemetryAsync failed {ex}"));
                 throw;
             }
             finally

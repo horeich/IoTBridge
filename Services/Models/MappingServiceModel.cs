@@ -1,10 +1,10 @@
-// Copyright (c) Horeich GmbH. All rights reserved.
+// Copyright (c) HOREICH GmbH. All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Horeich.Services.StorageAdapter
+namespace Horeich.Services.Models
 {
     public class MappingServiceModel
     {
@@ -19,8 +19,7 @@ namespace Horeich.Services.StorageAdapter
 
         [JsonProperty(PropertyName = "mapping")]
         public List<MappingItem> Mapping { get; set; }
-        // [JsonProperty(PropertyName = "mappings")]
-        // public Mapping[] Mappings { get; set; }
+        
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this);

@@ -1,26 +1,17 @@
 
-// Copyright (c) Horeich GmbH, all rights reserved
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 using System.Collections.Generic;
-using Horeich.Services.StorageAdapter;
 
-namespace Horeich.Services.VirtualDevice
+namespace Horeich.Services.Models
 {
-    public class DeviceTwinCredentials
-    {
-        public string DeviceId { get; set; }
-        public string DeviceKey { get; set; }
-        public string HubString { get; set; }
-    }
-
     public class DeviceDataModel
     {
         public string DeviceId { get; set; }
         public string HubConnString { get; set; }
         public string DeviceKey { get; set; }
-        public int SendInterval { get; set; }
-        public List<Tuple<string, Type>> Mapping { get; set; }
+        public int TimeoutInterval { get; set; }
         public List<TypeItem> MappingScheme { get; set; }
         public string Type { get; set; }
         public Dictionary<string, string> Properties { get; set; }

@@ -1,4 +1,4 @@
-// Copyright (c) HOREICH. All rights reserved.
+// Copyright (c) HOREICH GmbH, All rights reserved
 
 using System;
 

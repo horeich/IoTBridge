@@ -4,15 +4,14 @@ namespace Horeich.Services.Runtime
 {   
     public interface IServicesConfig
     {
-        string ApplicationNameKey { get; }
-        string StorageAdapterDocumentKey { get; }
-        string StorageAdapterDeviceCollectionKey { get; }
-        string StorageAdapterMappingCollection { get; }
+        string ApplicationName { get; }
+        string StorageAdapterDeviceContainer { get; }
+        string StorageAdapterMMappingContainer { get; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
-        int ExternalOperationTimeout { get; }
+        int DeviceClientTimeout { get; }
         string DbPartitionKey { get; }
-        int DeviceUpdateInterval { get; }
+        // int DeviceUpdateInterval { get; }
 
         // string UserManagementApiUrl { get; }
         // StorageConfig MessagesConfig { get; set; }
@@ -42,15 +41,14 @@ namespace Horeich.Services.Runtime
     }
     public class ServicesConfig : IServicesConfig
     {
-        public string ApplicationNameKey { get; set; }
-        public string StorageAdapterDocumentKey { get; set; }
-        public string StorageAdapterDeviceCollectionKey { get; set; }
-        public string StorageAdapterMappingCollection { get; set; }
+        public string ApplicationName { get; set; }
+        public string StorageAdapterDeviceContainer { get; set; }
+        public string StorageAdapterMMappingContainer { get; set; }
         public string StorageAdapterApiUrl { get; set; }
         public int StorageAdapterApiTimeout { get; set; }
-        public int ExternalOperationTimeout { get; set; }
+        public int DeviceClientTimeout { get; set; }
         public string DbPartitionKey { get; set; }
-        public int DeviceUpdateInterval { get; set; }
+        // public int DeviceUpdateInterval { get; set; }
         // string UserManagementApiUrl { get; }
         // StorageConfig MessagesConfig { get; set; }
         // AlarmsConfig AlarmsConfig { get; set; }

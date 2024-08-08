@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Horeich.Services.Diagnostics;
 using Horeich.Services.Exceptions;
 using Horeich.Services.Http;
+using Horeich.Services.Models;
 using Horeich.Services.Runtime;
 using Newtonsoft.Json;
 
@@ -19,7 +20,6 @@ namespace Horeich.Services.StorageAdapter
         Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version);
     }
 
-    // TODO: handle retriable errors
     public sealed class StorageAdapterClient : IStorageAdapterClient
     {
         private const bool ALLOW_INSECURE_SSL_SERVER = true; // TODO: make it configurable, default to false
@@ -46,7 +46,7 @@ namespace Horeich.Services.StorageAdapter
 
             ThrowIfError(response, collectionId, key);
 
-            // Deserialize Http message into value API model (TODO: Throws JsonSerializationException)
+            // Deserialize Http message into value API model (throws)
             return JsonConvert.DeserializeObject<DeviceDataSerivceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
@@ -58,20 +58,19 @@ namespace Horeich.Services.StorageAdapter
 
             ThrowIfError(response, "devices", deviceId);
 
-            // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
+            // Deserialize Http message into value API model (throws) // TODO:
             return JsonConvert.DeserializeObject<DeviceDataSerivceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
         public async Task<MappingServiceModel> GetDeviceMappingAsync(string deviceType, string version)
         {
-            // TODO: HTTP timeout
             var response = await _httpClient.GetAsync(
                 PrepareRequest($"mappings/type/{deviceType}/version/{version}")); // v1 is added
 
             ThrowIfError(response, "mappings", String.Format($"{deviceType}.{version}"));
 
-            // Deserialize Http message into value API model (TODO: Throws JsonSerializationException) // TODO:
+            // Deserialize Http message into value API model (throws)
             return JsonConvert.DeserializeObject<MappingServiceModel>(response.Content,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
@@ -119,45 +118,3 @@ namespace Horeich.Services.StorageAdapter
         }
     }
 }
-
-
-        // public async Task<ValueApiModel> UpsertAsync(string collectionId, string key, string value, string etag)
-        // {
-        //     var response = await this.httpClient.PutAsync(
-        //         this.PrepareRequest($"collections/{collectionId}/values/{key}",
-        //             new ValueApiModel { Data = value, ETag = etag }));
-
-        //     this.ThrowIfError(response, collectionId, key);
-
-        //     return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
-        // }
-
-        // public async Task DeleteAsync(string collectionId, string key)
-        // {
-        //     var response = await this.httpClient.DeleteAsync(
-        //         this.PrepareRequest($"collections/{collectionId}/values/{key}"));
-
-        //     this.ThrowIfError(response, collectionId, key);
-        // }
-
-
-        // public async Task<ValueListApiModel> GetAllAsync(string collectionId)
-        // {
-        //     var response = await this.httpClient.GetAsync(
-        //         this.PrepareRequest($"collections/{collectionId}/values"));
-
-        //     this.ThrowIfError(response, collectionId, "");
-
-        //     return JsonConvert.DeserializeObject<ValueListApiModel>(response.Content);
-        // }
-
-        // public async Task<ValueApiModel> CreateAsync(string collectionId, string value)
-        // {
-        //     var response = await this.httpClient.PostAsync(
-        //         this.PrepareRequest($"collections/{collectionId}/values",
-        //             new ValueApiModel { Data = value }));
-
-        //     this.ThrowIfError(response, collectionId, "");
-
-        //     return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
-        // }

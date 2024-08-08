@@ -18,9 +18,7 @@ namespace Horeich.IoTBridge
     {
         public static void Main(string[] args)
         {
-            IConfig config = new Config(new DataHandler(new Logger(Uptime.ProcessId,"NLog", LogLevel.Info)));
-
-            // var builder = WebApplication.CreateBuilder(args);
+            IConfig config = new Config(new DataHandler(new Logger(Uptime.ProcessId,"NLog", LogLevel.Trace)));
 
             var host = new WebHostBuilder()
                 .UseUrls("http://*:" + config.Port) // the port to listen to

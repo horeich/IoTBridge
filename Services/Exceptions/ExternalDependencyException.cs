@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) HOREICH GmbH, all rights reserved
 
 using System;
 
