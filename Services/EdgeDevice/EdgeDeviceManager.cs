@@ -191,6 +191,9 @@ namespace Horeich.Services.EdgeDevice
 
                 // Send telemetry to IoT Hub
                 using CancellationTokenSource cts = new(_timeout);
+
+                _logger.Warn($"timeout is {_timeout}");
+
                 await edgeDevice.SendDeviceTelemetryAsync(telemetry.Data, cts.Token);
 
                 // Debug message

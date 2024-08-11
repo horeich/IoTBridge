@@ -54,7 +54,7 @@ namespace Horeich.Services.EdgeDevice
 
             // Create iot hub device client
             IAuthenticationMethod authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(model.DeviceId, model.DeviceKey);
-            _deviceClient = DeviceClient.Create(model.HubConnString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Mqtt);
+            _deviceClient = DeviceClient.Create(model.HubConnString, authMethod, Microsoft.Azure.Devices.Client.TransportType.Amqp);
 
             // _deviceClient.SetRetryPolicy() // set custom retry policy
         }
