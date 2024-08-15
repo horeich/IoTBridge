@@ -1,5 +1,7 @@
 # IoTBridge
 
+IoT edge gateway to tranform data from sensors to 
+
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Testing
